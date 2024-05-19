@@ -13,6 +13,7 @@ ind.freq   = [ 2,  5];
 ind.sinarg = [ 3,  6];
 ind.notch  = [ 7,  8];
 ind.lp2    = [ 9, 10];
+ind.lp1    = [11, 12];
 
 figure(1)
 subplot(311)
@@ -79,6 +80,27 @@ out = data.values(:,ind.lp2(1));
 figure(5)
 subplot(211)
 bode(G, get_lowpass_filter2(flp2, Dlp2, Ts), 2*pi*G.Frequency(G.Frequency < 1/2/Ts)), grid on
+subplot(212)
+bodemag(C, 2*pi*C.Frequency(C.Frequency < 1/2/Ts), opt), grid on
+set(gca, 'YScale', 'linear')
+
+
+% #define LOWPASS1_F_CUT 60.0f
+flp1 = 60.0;
+
+figure(6)
+subplot(211)
+plot(data.time, data.values(:, ind.exc)), grid on, ylabel('exc')
+subplot(212)
+plot(data.time, data.values(:, ind.lp1)), grid on, ylabel('notch')
+
+inp = data.values(:,ind.exc(1));
+out = data.values(:,ind.lp1(1));
+[G, C] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
+
+figure(7)
+subplot(211)
+bode(G, get_lowpass_filter1(flp2, Ts), 2*pi*G.Frequency(G.Frequency < 1/2/Ts)), grid on
 subplot(212)
 bodemag(C, 2*pi*C.Frequency(C.Frequency < 1/2/Ts), opt), grid on
 set(gca, 'YScale', 'linear')

@@ -1,22 +1,22 @@
 #include "iirfilter.h"
 #include <math.h>
 
-void iirFilter2Init(IIRFilter2_t* filter)
+void iirFilterInit(IIRFilter_t* filter, const size_t order)
 {
-    filter->order = 2;
+    filter->order = order;
     for (size_t i = 0; i < filter->order; ++i) {
         filter->w[i] = 0.0f;
     }
 }
 
-float iirFilter2Apply(IIRFilter2_t* filter, const float input)
+float iirFilterApply(IIRFilter_t* filter, const float input)
 {
     const float output = filter->B[0] * input + filter->w[0];
 
-    return iirFilter2ApplyFilterStep(filter, input, output);
+    return iirFilterApplyFilterStep(filter, input, output);
 }
 
-float iirFilter2ApplyConstrained(IIRFilter2_t* filter,
+float iirFilterApplyConstrained(IIRFilter_t* filter,
                                  const float input,
                                  const float yMin,
                                  const float yMax)
@@ -28,10 +28,10 @@ float iirFilter2ApplyConstrained(IIRFilter2_t* filter,
                        : (outputUnconstrained > yMax) ? yMax
                        :  outputUnconstrained;
 
-    return iirFilter2ApplyFilterStep(filter, input, output);
+    return iirFilterApplyFilterStep(filter, input, output);
 }
 
-float iirFilter2ApplyFilterStep(IIRFilter2_t* filter, const float input, const float output)
+float iirFilterApplyFilterStep(IIRFilter_t* filter, const float input, const float output)
 {
     // https://dsp.stackexchange.com/questions/72575/transposed-direct-form-ii
     for (size_t i = 0; i < filter->order - 1; ++i) {
@@ -42,19 +42,49 @@ float iirFilter2ApplyFilterStep(IIRFilter2_t* filter, const float input, const f
     return output;
 }
 
+void lowPassFilter1Init(LowPassFilter1_t* lowpass1, const float fcut, const float Ts)
+{
+    iirFilterInit(&lowpass1->filter, IIR_FILTER1_ORDER);
+    lowPassFilter1Update(lowpass1, fcut, Ts);
+}
+
+void lowPassFilter1Update(LowPassFilter1_t* lowpass1, const float fcut, const float Ts)
+{
+    IIRFilter_t* filter = &lowpass1->filter;
+
+    filter->A[0] = 1.0f;
+    filter->A[1] = -expf(-Ts * 2.0f * M_PI * fcut);
+
+    filter->B[0] = 1.0f + filter->A[1];
+    filter->B[1] = 0.0f;
+}
+
+float lowPassFilter1Apply(LowPassFilter1_t* lowpass1, const float input)
+{
+    return iirFilterApply(&lowpass1->filter, input);
+}
+
+float lowPassFilter1ApplyConstrained(LowPassFilter1_t* lowpass1,
+                                     const float input,
+                                     const float yMin,
+                                     const float yMax)
+{
+    return iirFilterApplyConstrained(&lowpass1->filter, input, yMin, yMax);
+}
+
 // Second Order Notch Filter
 // Time continous prototype: G(s) = (s^2 + 2 * D * wcut * s + wcut^2) / (s^2 + wcut^2)
 // Disrectization method: Tustin with prewarping
 
 void notchFilterInit(NotchFilter_t* notch, const float fcut, const float D, const float Ts)
 {
-    iirFilter2Init(&notch->filter);
+    iirFilterInit(&notch->filter, IIR_FILTER2_ORDER);
     notchFilterUpdate(notch, fcut, D, Ts);
 }
 
 void notchFilterUpdate(NotchFilter_t* notch, const float fcut, const float D, const float Ts)
 {
-    IIRFilter2_t* filter = &notch->filter;
+    IIRFilter_t* filter = &notch->filter;
 
     const float Q = 1.0f / (2.0f * D);
     // prewarp is done implicitly
@@ -74,7 +104,7 @@ void notchFilterUpdate(NotchFilter_t* notch, const float fcut, const float D, co
 
 float notchFilterApply(NotchFilter_t* notch, const float input)
 {
-    return iirFilter2Apply(&notch->filter, input);
+    return iirFilterApply(&notch->filter, input);
 }
 
 float notchFilterApplyConstrained(NotchFilter_t* notch,
@@ -82,7 +112,7 @@ float notchFilterApplyConstrained(NotchFilter_t* notch,
                                   const float yMin,
                                   const float yMax)
 {
-    return iirFilter2ApplyConstrained(&notch->filter, input, yMin, yMax);
+    return iirFilterApplyConstrained(&notch->filter, input, yMin, yMax);
 }
 
 // Second Order Lowpass Filter
@@ -91,13 +121,13 @@ float notchFilterApplyConstrained(NotchFilter_t* notch,
 
 void lowPassFilter2Init(LowPassFilter2_t* lowpass2, const float fcut, const float D, const float Ts)
 {
-    iirFilter2Init(&lowpass2->filter);
+    iirFilterInit(&lowpass2->filter, IIR_FILTER2_ORDER);
     lowPassFilter2Update(lowpass2, fcut, D, Ts);
 }
 
 void lowPassFilter2Update(LowPassFilter2_t* lowpass2, const float fcut, const float D, const float Ts)
 {
-    IIRFilter2_t* filter = &lowpass2->filter;
+    IIRFilter_t* filter = &lowpass2->filter;
 
     const float wcut = 2.0f * M_PI * fcut;
     const float k1 = 2.0f * D * Ts * wcut;
@@ -113,7 +143,7 @@ void lowPassFilter2Update(LowPassFilter2_t* lowpass2, const float fcut, const fl
 
 float lowPassFilter2Apply(LowPassFilter2_t* lowpass2, const float input)
 {
-    return iirFilter2Apply(&lowpass2->filter, input);
+    return iirFilterApply(&lowpass2->filter, input);
 }
 
 float lowPassFilter2ApplyConstrained(LowPassFilter2_t* lowpass2,
@@ -121,5 +151,5 @@ float lowPassFilter2ApplyConstrained(LowPassFilter2_t* lowpass2,
                                      const float yMin,
                                      const float yMax)
 {
-    return iirFilter2ApplyConstrained(&lowpass2->filter, input, yMin, yMax);
+    return iirFilterApplyConstrained(&lowpass2->filter, input, yMin, yMax);
 }
