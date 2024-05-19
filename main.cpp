@@ -25,18 +25,22 @@
 
 int main(int argc, char *argv[])
 {
-    Chirp chirp_cpp(CHIRP_F0, CHIRP_F1, CHIRP_T1, TS);
-    NotchFilter notch_cpp(NOTCH_F_CUT, NOTCH_D, TS);
-    LowPassFilter2 lowpass2_cpp(LOWPASS2_F_CUT, LOWPASS2_D, TS);
-    LowPassFilter1 lowpass1_cpp(LOWPASS1_F_CUT, TS);
+    Chirp chirp_cpp;
+    chirp_cpp.init(CHIRP_F0, CHIRP_F1, CHIRP_T1, TS);
+    IIRFilter notch_cpp;
+    notch_cpp.notchFilterInit(NOTCH_F_CUT, NOTCH_D, TS);
+    IIRFilter lowpass2_cpp;
+    lowpass2_cpp.lowPassFilter2Init(LOWPASS2_F_CUT, LOWPASS2_D, TS);
+    IIRFilter lowpass1_cpp;
+    lowpass1_cpp.lowPassFilter1Init(LOWPASS1_F_CUT, TS);
 
     chirp_t chirp_c;
     chirpInit(&chirp_c, CHIRP_F0, CHIRP_F1, CHIRP_T1, TS);
-    NotchFilter_t notch_c;
+    IIRFilter_t notch_c;
     notchFilterInit(&notch_c, NOTCH_F_CUT, NOTCH_D, TS);
-    LowPassFilter2_t lowpass2_c;
+    IIRFilter_t lowpass2_c;
     lowPassFilter2Init(&lowpass2_c, LOWPASS2_F_CUT, LOWPASS2_D, TS);
-    LowPassFilter1_t lowpass1_c;
+    IIRFilter_t lowpass1_c;
     lowPassFilter1Init(&lowpass1_c, LOWPASS1_F_CUT, TS);
 
     std::ofstream ofs ("output/datafile.txt");
@@ -45,19 +49,19 @@ int main(int argc, char *argv[])
 
     while (chirp_cpp.update() && chirpUpdate(&chirp_c)) {
 
-        ofs  << std::setprecision(9) << std::scientific << cntr++ * TS << ", "                                            //  0
-                                                        << chirp_cpp.getExc() << ", "                                     //  1
-                                                        << chirp_cpp.getFreq() << ", "                                    //  2
-                                                        << chirp_cpp.getSinarg() << ", "                                  //  3
-                                                        << chirp_c.exc << ", "                                            //  4
-                                                        << chirp_c.fchirp << ", "                                         //  5
-                                                        << chirp_c.sinarg << ", "                                         //  6
-                                                        << notch_cpp.apply(chirp_cpp.getExc()) << ", "                    //  7
-                                                        << notchFilterApply(&notch_c, chirp_c.exc) << ", "                //  8
-                                                        << lowpass2_cpp.apply(chirp_cpp.getExc()) << ", "                 //  9
-                                                        << lowPassFilter2Apply(&lowpass2_c, chirp_c.exc) << ", "          // 10
-                                                        << lowpass1_cpp.apply(chirp_cpp.getExc()) << ", "                 // 11
-                                                        << lowPassFilter1Apply(&lowpass1_c, chirp_c.exc) << std::endl;    // 12
+        ofs  << std::setprecision(9) << std::scientific << cntr++ * TS << ", "                                      //  0
+                                                        << chirp_cpp.getExc() << ", "                               //  1
+                                                        << chirp_cpp.getFreq() << ", "                              //  2
+                                                        << chirp_cpp.getSinarg() << ", "                            //  3
+                                                        << chirp_c.exc << ", "                                      //  4
+                                                        << chirp_c.fchirp << ", "                                   //  5
+                                                        << chirp_c.sinarg << ", "                                   //  6
+                                                        << notch_cpp.apply(chirp_cpp.getExc()) << ", "     //  7
+                                                        << iirFilterApply(&notch_c, chirp_c.exc) << ", "            //  8
+                                                        << lowpass2_cpp.apply(chirp_cpp.getExc()) << ", "  //  9
+                                                        << iirFilterApply(&lowpass2_c, chirp_c.exc) << ", "         // 10
+                                                        << lowpass1_cpp.apply(chirp_cpp.getExc()) << ", "  // 11
+                                                        << iirFilterApply(&lowpass1_c, chirp_c.exc) << std::endl;   // 12
 
         // const float yMin = -0.8f;
         // const float yMax = 0.8f;

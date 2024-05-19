@@ -1,5 +1,3 @@
-#include <math.h>
-
 #include "chirp.h"
 
 // initialize the chirp signal generator
@@ -13,7 +11,7 @@ void chirpInit(chirp_t *chirp, const float f0, const float f1, const float t1, c
     chirp->Ts = Ts;
     chirp->N = (uint32_t)(t1 / Ts);
     chirp->beta = powf(f1 / f0, 1.0f / t1);
-    chirp->k0 = 2.0f * M_PI / logf(chirp->beta);
+    chirp->k0 = 2.0f * M_PIf / logf(chirp->beta);
     chirp->k1 = chirp->k0 * f0;
     chirpReset(chirp);
 }
@@ -51,7 +49,7 @@ bool chirpUpdate(chirp_t *chirp)
 
         chirp->fchirp = chirp->f0 * powf(chirp->beta, (float)(chirp->count) * chirp->Ts);
         chirp->sinarg = chirp->k0 * chirp->fchirp - chirp->k1;
-        chirp->sinarg = fmodf(chirp->sinarg, 2.0f * M_PI);
+        chirp->sinarg = fmodf(chirp->sinarg, 2.0f * M_PIf);
         chirp->exc = sinf(chirp->sinarg);
         chirp->count++;
 

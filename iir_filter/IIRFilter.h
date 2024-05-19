@@ -1,59 +1,30 @@
 #pragma once
 
-#include <cstddef>
-
-#ifndef M_PI
-    # define M_PI 3.14159265358979323846
-#endif
+#include <math.h>
 
 class IIRFilter {
 public:
-    IIRFilter(const size_t order);
+    IIRFilter() {};
     virtual ~IIRFilter() = default;
 
-    virtual float apply(const float input) = 0;
-    virtual float applyConstrained(const float input, const float yMin, const float yMax) = 0;
+    void lowPassFilter1Init(const float fcut, const float Ts);
+    void lowPassFilter1Update(const float fcut, const float Ts);
+    void notchFilterInit(const float fcut, const float D, const float Ts);
+    void notchFilterUpdate(const float fcut, const float D, const float Ts);
+    void lowPassFilter2Init(const float fcut, const float D, const float Ts);
+    void lowPassFilter2Update(const float fcut, const float D, const float Ts);
 
-protected:
-    struct IIRFilterParams {
-        size_t order;
+    void init(const unsigned order);
+    float apply(const float input);
+    float applyConstrained(const float input, const float yMin, const float yMax);
+
+private:
+    struct IIRFilterParams{
+        unsigned order;
         float A[3];
         float B[3];
         float w[2];
-    } params;
+    } filter;
 
-    void initFilter();
-    float applyFilter(const float input);
-    float applyFilterConstrained(const float input, float yMin, float yMax);
-    float applyFilterStep(const float input, const float output);
-};
-
-class LowPassFilter1 : public IIRFilter {
-public:
-    LowPassFilter1(const float fcut, const float Ts);
-
-    void update(const float fcut, const float Ts);
-    
-    float apply(const float input) override;
-    float applyConstrained(const float input, const float yMin, const float yMax) override;
-};
-
-class NotchFilter : public IIRFilter {
-public:
-    NotchFilter(const float fcut, const float D, const float Ts);
-
-    void update(const float fcut, const float D, const float Ts);
-
-    float apply(const float input) override;
-    float applyConstrained(const float input, const float yMin, const float yMax) override;
-};
-
-class LowPassFilter2 : public IIRFilter {
-public:
-    LowPassFilter2(const float fcut, const float D, const float Ts);
-
-    void update(const float fcut, const float D, const float Ts);
-    
-    float apply(const float input) override;
-    float applyConstrained(const float input, const float yMin, const float yMax) override;
+    float applyFilterUpdate(const float input, const float output);
 };

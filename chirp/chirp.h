@@ -1,10 +1,11 @@
 #pragma once
 
-#include <stdint.h>
+#include <math.h>
 #include <stdbool.h>
+#include <stdint.h>
 
-#ifndef M_PI
-    # define M_PI 3.14159265358979323846
+#ifndef M_PIf
+    #define M_PIf 3.14159265358979323846f /* pi */
 #endif
 
 typedef struct chirp_s {
