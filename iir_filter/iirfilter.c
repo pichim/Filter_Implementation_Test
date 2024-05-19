@@ -44,7 +44,7 @@ float iirFilterApplyFilterStep(IIRFilter_t* filter, const float input, const flo
 
 void lowPassFilter1Init(LowPassFilter1_t* lowpass1, const float fcut, const float Ts)
 {
-    iirFilterInit(&lowpass1->filter, IIR_FILTER1_ORDER);
+    iirFilterInit(&lowpass1->filter, 1);
     lowPassFilter1Update(lowpass1, fcut, Ts);
 }
 
@@ -78,7 +78,7 @@ float lowPassFilter1ApplyConstrained(LowPassFilter1_t* lowpass1,
 
 void notchFilterInit(NotchFilter_t* notch, const float fcut, const float D, const float Ts)
 {
-    iirFilterInit(&notch->filter, IIR_FILTER2_ORDER);
+    iirFilterInit(&notch->filter, 2);
     notchFilterUpdate(notch, fcut, D, Ts);
 }
 
@@ -121,7 +121,7 @@ float notchFilterApplyConstrained(NotchFilter_t* notch,
 
 void lowPassFilter2Init(LowPassFilter2_t* lowpass2, const float fcut, const float D, const float Ts)
 {
-    iirFilterInit(&lowpass2->filter, IIR_FILTER2_ORDER);
+    iirFilterInit(&lowpass2->filter, 2);
     lowPassFilter2Update(lowpass2, fcut, D, Ts);
 }
 

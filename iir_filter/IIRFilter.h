@@ -28,16 +28,7 @@ protected:
     float applyFilterStep(const float input, const float output);
 };
 
-class IIRFilter1 : public IIRFilter {
-public:
-    IIRFilter1();
-    virtual float apply(const float input) = 0;
-    virtual float applyConstrained(const float input, const float yMin, const float yMax) = 0;
-private:
-    static constexpr size_t order = 1;
-};
-
-class LowPassFilter1 : public IIRFilter1 {
+class LowPassFilter1 : public IIRFilter {
 public:
     LowPassFilter1(const float fcut, const float Ts);
 
@@ -47,16 +38,7 @@ public:
     float applyConstrained(const float input, const float yMin, const float yMax) override;
 };
 
-class IIRFilter2 : public IIRFilter {
-public:
-    IIRFilter2();
-    virtual float apply(const float input) = 0;
-    virtual float applyConstrained(const float input, const float yMin, const float yMax) = 0;
-private:
-    static constexpr size_t order = 2;
-};
-
-class NotchFilter : public IIRFilter2 {
+class NotchFilter : public IIRFilter {
 public:
     NotchFilter(const float fcut, const float D, const float Ts);
 
@@ -66,7 +48,7 @@ public:
     float applyConstrained(const float input, const float yMin, const float yMax) override;
 };
 
-class LowPassFilter2 : public IIRFilter2 {
+class LowPassFilter2 : public IIRFilter {
 public:
     LowPassFilter2(const float fcut, const float D, const float Ts);
 

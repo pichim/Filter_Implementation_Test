@@ -6,9 +6,6 @@
     #define M_PI 3.14159265358979323846
 #endif
 
-#define IIR_FILTER1_ORDER 2
-#define IIR_FILTER2_ORDER 2
-
 typedef struct {
     size_t order;
     float A[3];

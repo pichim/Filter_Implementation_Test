@@ -44,13 +44,11 @@ float IIRFilter::applyFilterStep(const float input, const float output)
     return output;
 }
 
-IIRFilter1::IIRFilter1() : IIRFilter(order) {}
-
 // First Order Lowpass Filter
 // Time continous prototype: G(s) = wcut / (s +  wcut)
 // Disrectization method: ZOH with one additional forward shift, e.g. G(z^-1) = Gzoh(z^-1) * z
 
-LowPassFilter1::LowPassFilter1(const float fcut, const float Ts)
+LowPassFilter1::LowPassFilter1(const float fcut, const float Ts) : IIRFilter(1)
 {
     update(fcut, Ts);
 }
@@ -74,13 +72,11 @@ float LowPassFilter1::applyConstrained(const float input, const float yMin, cons
     return applyFilterConstrained(input, yMin, yMax);
 }
 
-IIRFilter2::IIRFilter2() : IIRFilter(order) {}
-
 // Second Order Notch Filter
 // Time continous prototype: G(s) = (s^2 + 2 * D * wcut * s + wcut^2) / (s^2 + wcut^2)
 // Disrectization method: Tustin with prewarping
 
-NotchFilter::NotchFilter(const float fcut, const float D, const float Ts)
+NotchFilter::NotchFilter(const float fcut, const float D, const float Ts) : IIRFilter(2)
 {
     update(fcut, D, Ts);
 }
@@ -117,7 +113,7 @@ float NotchFilter::applyConstrained(const float input, const float yMin, const f
 // Time continous prototype: G(s) = wcut^2 / (s^2 + 2 * D * wcut * s + wcut^2)
 // Disrectization method: Euler
 
-LowPassFilter2::LowPassFilter2(const float fcut, const float D, const float Ts)
+LowPassFilter2::LowPassFilter2(const float fcut, const float D, const float Ts) : IIRFilter(2)
 {
     update(fcut, D, Ts);
 }
