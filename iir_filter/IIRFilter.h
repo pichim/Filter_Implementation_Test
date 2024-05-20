@@ -7,12 +7,19 @@ public:
     IIRFilter() {};
     virtual ~IIRFilter() = default;
 
-    void lowPassFilter1Init(const float fcut, const float Ts);
-    void lowPassFilter1Update(const float fcut, const float Ts);
-    void notchFilterInit(const float fcut, const float D, const float Ts);
-    void notchFilterUpdate(const float fcut, const float D, const float Ts);
-    void lowPassFilter2Init(const float fcut, const float D, const float Ts);
-    void lowPassFilter2Update(const float fcut, const float D, const float Ts);
+    void lowPass1Init(const float fcut, const float Ts);
+    void lowPass1Update(const float fcut, const float Ts);
+
+    void leadLag1Init(const float fZero, const float fPole, const float Ts);
+    void leadLag1Update(const float fZero, const float fPole, const float Ts);
+    void phaseComp1Init(const float fCenter, const float phaseLift, const float Ts);
+    void phaseComp1Update(const float fCenter, const float phaseLift, const float Ts);
+
+    void notchInit(const float fcut, const float D, const float Ts);
+    void notchUpdate(const float fcut, const float D, const float Ts);
+
+    void lowPass2Init(const float fcut, const float D, const float Ts);
+    void lowPass2Update(const float fcut, const float D, const float Ts);
 
     void init(const unsigned order);
     float apply(const float input);

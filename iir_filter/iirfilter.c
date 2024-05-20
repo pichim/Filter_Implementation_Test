@@ -4,13 +4,13 @@
 // Time continous prototype: G(s) = wcut / (s +  wcut)
 // Disrectization method: ZOH with one additional forward shift, e.g. G(z^-1) = Gzoh(z^-1) * z
 
-void lowPassFilter1Init(IIRFilter_t* filter, const float fcut, const float Ts)
+void lowPass1Init(IIRFilter_t* filter, const float fcut, const float Ts)
 {
     iirFilterInit(filter, 1);
-    lowPassFilter1Update(filter, fcut, Ts);
+    lowPass1Update(filter, fcut, Ts);
 }
 
-void lowPassFilter1Update(IIRFilter_t* filter, const float fcut, const float Ts)
+void lowPass1Update(IIRFilter_t* filter, const float fcut, const float Ts)
 {
     filter->A[0] = 1.0f;
     filter->A[1] = -expf(-Ts * 2.0f * M_PIf * fcut);
@@ -18,17 +18,54 @@ void lowPassFilter1Update(IIRFilter_t* filter, const float fcut, const float Ts)
     filter->B[1] = 0.0f;
 }
 
+// First Order Lead or Lag Filter
+// Time continous prototype: G(s) = (wPole / wZero) * (s + wZero) / (s + wPole)
+// Disrectization method: Tustin with prewarping
+
+void leadLag1Init(IIRFilter_t* filter, const float fZero, const float fPole, const float Ts)
+{
+    iirFilterInit(filter, 1);
+    leadLag1Update(filter, fZero, fPole, Ts);
+}
+
+void leadLag1Update(IIRFilter_t* filter, const float fZero, const float fPole, const float Ts)
+{
+    const float alpha = fZero / fPole;
+    const float fCenter = fPole * sqrtf(alpha);
+    const float phaseLift = asinf( (1.0f - alpha) / (1.0f + alpha) ) * (180.0f / M_PIf);
+    phaseComp1Update(filter, fCenter, phaseLift, Ts);
+}
+
+void phaseComp1Init(IIRFilter_t* filter, const float fCenter, const float phaseLift, const float Ts)
+{
+    iirFilterInit(filter, 1);
+    phaseComp1Update(filter, fCenter, phaseLift, Ts);
+}
+
+void phaseComp1Update(IIRFilter_t* filter, const float fCenter, const float phaseLift, const float Ts)
+{
+    const float omega = 2.0f * M_PIf * fCenter * Ts;
+    const float sn = sinf(phaseLift * (M_PIf / 180.0f));
+    const float gain = (1.0f + sn) / (1.0f - sn);
+    const float alpha = (12.0f - omega * omega) / (6.0f * omega * sqrtf(gain)); // approximate prewarping (series expansion)
+    const float k = 1.0f / (1.0f + alpha);
+
+    filter->B[0] = (1.0f + alpha * gain) * k;
+    filter->B[1] = (1.0f - alpha * gain) * k;
+    filter->A[1] = (1.0f - alpha) * k;
+}
+
 // Second Order Notch Filter
 // Time continous prototype: G(s) = (s^2 + 2 * D * wcut * s + wcut^2) / (s^2 + wcut^2)
 // Disrectization method: Tustin with prewarping
 
-void notchFilterInit(IIRFilter_t* filter, const float fcut, const float D, const float Ts)
+void notchInit(IIRFilter_t* filter, const float fcut, const float D, const float Ts)
 {
     iirFilterInit(filter, 2);
-    notchFilterUpdate(filter, fcut, D, Ts);
+    notchUpdate(filter, fcut, D, Ts);
 }
 
-void notchFilterUpdate(IIRFilter_t* filter, const float fcut, const float D, const float Ts)
+void notchUpdate(IIRFilter_t* filter, const float fcut, const float D, const float Ts)
 {
     const float Q = 1.0f / (2.0f * D);
     // prewarp is done implicitly
@@ -38,24 +75,24 @@ void notchFilterUpdate(IIRFilter_t* filter, const float fcut, const float D, con
     const float alpha = sn / (2.0f * Q);
 
     filter->B[0] = 1.0f / (1.0f + alpha);
-    filter->B[1] = -2.0f * cs / (1.0f + alpha);
+    filter->B[1] = -2.0f * cs * filter->B[0];
     filter->B[2] = filter->B[0];
     filter->A[0] = 1.0f;
     filter->A[1] = filter->B[1];
-    filter->A[2] = (1.0f - alpha) / (1.0f + alpha);
+    filter->A[2] = (1.0f - alpha) * filter->B[0];
 }
 
 // Second Order Lowpass Filter
 // Time continous prototype: G(s) = wcut^2 / (s^2 + 2 * D * wcut * s + wcut^2)
 // Disrectization method: Euler
 
-void lowPassFilter2Init(IIRFilter_t* filter, const float fcut, const float D, const float Ts)
+void lowPass2Init(IIRFilter_t* filter, const float fcut, const float D, const float Ts)
 {
     iirFilterInit(filter, 2);
-    lowPassFilter2Update(filter, fcut, D, Ts);
+    lowPass2Update(filter, fcut, D, Ts);
 }
 
-void lowPassFilter2Update(IIRFilter_t* filter, const float fcut, const float D, const float Ts)
+void lowPass2Update(IIRFilter_t* filter, const float fcut, const float D, const float Ts)
 {
     const float wcut = 2.0f * M_PIf * fcut;
     const float k1 = 2.0f * D * Ts * wcut;
