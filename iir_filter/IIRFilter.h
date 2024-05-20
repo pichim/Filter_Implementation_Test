@@ -21,6 +21,9 @@ public:
     void lowPass2Init(const float fcut, const float D, const float Ts);
     void lowPass2Update(const float fcut, const float D, const float Ts);
 
+    void leadLag2Init(const float fZero, const float DZero, const float fPole, const float DPole, const float Ts);
+    void leadLag2Update(const float fZero, const float DZero, const float fPole, const float DPole, const float Ts);
+
     void init(const unsigned order);
     float apply(const float input);
     float applyConstrained(const float input, const float yMin, const float yMax);

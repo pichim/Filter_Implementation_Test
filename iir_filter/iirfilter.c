@@ -56,7 +56,7 @@ void phaseComp1Update(IIRFilter_t* filter, const float fCenter, const float phas
 }
 
 // Second Order Notch Filter
-// Time continous prototype: G(s) = (s^2 + 2 * D * wcut * s + wcut^2) / (s^2 + wcut^2)
+// Time continous prototype: G(s) = (s^2 + wcut^2) / (s^2 + 2 * D * wcut * s + wcut^2)
 // Disrectization method: Tustin with prewarping
 
 void notchInit(IIRFilter_t* filter, const float fcut, const float D, const float Ts)
@@ -103,6 +103,37 @@ void lowPass2Update(IIRFilter_t* filter, const float fcut, const float D, const 
     filter->B[0] = 1.0f + filter->A[1] + filter->A[2];
     filter->B[1] = 0.0f;
     filter->B[2] = 0.0f;
+}
+
+// Second Order Lead or Lag Filter
+// Time continous prototype: G(s) = (wPole^2 / wZero^2) * (s^2 + 2*DZero*wZero*s + wZero^2) / (s^2 + 2*DPole*wPole*s + wPole^2)
+// Disrectization method: Tustin with prewarping
+
+void leadLag2Init(IIRFilter_t* filter, const float fZero, const float DZero, const float fPole, const float DPole, const float Ts)
+{
+    iirFilterInit(filter, 2);
+    leadLag2Update(filter, fZero, DZero, fPole, DPole, Ts);
+}
+
+void leadLag2Update(IIRFilter_t* filter, const float fZero, const float DZero, const float fPole, const float DPole, const float Ts)
+{
+    // prewarping
+    const float wZero = (2.0f / Ts) * tanf(M_PIf * fZero * Ts);
+    const float wPole = (2.0f / Ts) * tanf(M_PIf * fPole * Ts);
+
+    const float k0 = wPole * wPole;
+    const float k1 = wZero * wZero;
+    const float k2 = Ts * Ts * k0 * k1;
+    const float k3 = DPole * Ts * wPole * k1;
+    const float k4 = DZero * Ts * k0 * wZero;
+    const float k5 = 1.0f / (k2 + 4.0f * (k1 + k3));
+        
+    filter->B[0] = (k2 + 4.0f * (k4 + k0)) * k5;
+    filter->B[1] = 2.0f * (k2 - 4.0f * k0) * k5;
+    filter->B[2] = (k2 + 4.0f * (k0 - k4)) * k5;
+    filter->A[0] = 1.0f;
+    filter->A[1] = 2.0f * (k2 - 4.0f * k1) * k5;
+    filter->A[2] = (k2 + 4.0f * (k1 - k3)) * k5;
 }
 
 float iirFilterApply(IIRFilter_t* filter, const float input)

@@ -1,11 +1,10 @@
 function G = get_lowpass1(fcut, Ts)
 
-    a0 = -exp(-Ts*2*pi*fcut);
-    b0 = 0;
-    b1 = (1 + a0);
+    a1 = -exp(-Ts*2*pi*fcut);
+    b0 = (1 + a1);
     
-    B = [b1 b0];
-    A = [1 a0];
+    B = [b0 0];
+    A = [1 a1];
 
     G = tf(B, A, Ts);
     set(G, 'variable', 'z^-1');

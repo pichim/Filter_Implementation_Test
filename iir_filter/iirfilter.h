@@ -27,6 +27,9 @@ void notchUpdate(IIRFilter_t* filter, const float fcut, const float D, const flo
 void lowPass2Init(IIRFilter_t* filter, const float fcut, const float D, const float Ts);
 void lowPass2Update(IIRFilter_t* filter, const float fcut, const float D, const float Ts);
 
+void leadLag2Init(IIRFilter_t* filter, const float fZero, const float DZero, const float fPole, const float DPole, const float Ts);
+void leadLag2Update(IIRFilter_t* filter, const float fZero, const float DZero, const float fPole, const float DPole, const float Ts);
+
 float iirFilterApply(IIRFilter_t* filter, const float input);
 float iirFilterApplyConstrained(IIRFilter_t* filter, const float input, const float yMin, const float yMax);
 

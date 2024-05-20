@@ -6,14 +6,14 @@ function G = get_notch(fcut, D, Ts)
     sn = sin(omega);
     cs = cos(omega);
     alpha = sn / (2 * Q);
-    b2 = 1 / (1 + alpha);
+    b0 = 1 / (1 + alpha);
     b1 = -2 * cs / (1 + alpha);
-    b0 = b2;
+    b2 = b0;
     a1 = b1;
-    a0 = (1 - alpha) / (1 + alpha);
+    a2 = (1 - alpha) / (1 + alpha);
 
-    B = [b2 b1 b0];
-    A = [1 a1 a0];
+    B = [b0 b1 b2];
+    A = [1 a1 a2];
 
     G = tf(B, A, Ts);
     set(G, 'variable', 'z^-1');
