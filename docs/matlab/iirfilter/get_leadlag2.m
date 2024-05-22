@@ -22,8 +22,7 @@ function G = get_leadlag2(fZero, DZero, fPole, DPole, Ts)
     B = [b0 b1 b2];
     A = [1 a1 a2];
 
-    G = tf(B, A, Ts);
-    set(G, 'variable', 'z^-1');
+    G = ss(tf(B, A, Ts));
 
 end
 

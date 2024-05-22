@@ -10,8 +10,7 @@ function G = get_lowpass2(fcut, D, Ts)
     B = [b0 0 0];
     A = [1 a1 a2];
 
-    G = tf(B, A, Ts);
-    set(G, 'variable', 'z^-1');
+    G = ss(tf(B, A, Ts));
 
 end
 

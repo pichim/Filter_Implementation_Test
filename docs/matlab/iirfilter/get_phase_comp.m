@@ -13,8 +13,7 @@ function G = get_phase_comp(fCenter, phaseLift, Ts)
     B = [b0 b1];
     A = [1 a1];
 
-    G = tf(B, A, Ts);
-    set(G, 'variable', 'z^-1');
+    G = ss(tf(B, A, Ts));
 
 end
 

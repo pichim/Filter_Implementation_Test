@@ -6,8 +6,7 @@ function G = get_lowpass1(fcut, Ts)
     B = [b0 0];
     A = [1 a1];
 
-    G = tf(B, A, Ts);
-    set(G, 'variable', 'z^-1');
+    G = ss(tf(B, A, Ts));
 
 end
 
