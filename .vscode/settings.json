@@ -52,6 +52,8 @@
         "iomanip": "cpp",
         "iirfilter.h": "c",
         "stddef.h": "c",
-        "math.h": "c"
+        "math.h": "c",
+        "sstream": "cpp",
+        "cinttypes": "cpp"
     }
 }

@@ -24,16 +24,16 @@ public:
     void leadLag2Init(const float fZero, const float DZero, const float fPole, const float DPole, const float Ts);
     void leadLag2Update(const float fZero, const float DZero, const float fPole, const float DPole, const float Ts);
 
-    void init(const unsigned order);
+    void init(const float output);
     float apply(const float input);
     float applyConstrained(const float input, const float yMin, const float yMax);
 
 private:
     struct IIRFilterParams{
         unsigned order;
-        float A[3];
-        float B[3];
-        float w[2];
+        float A[2]; // [a1, a2], a0 is always 1.0
+        float B[3]; // [b0, b1, b2]
+        float w[2]; // [w1, w2]
     } filter;
 
     float applyFilterUpdate(const float input, const float output);

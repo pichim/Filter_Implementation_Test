@@ -2,12 +2,19 @@ clc, clear variables
 addpath iirfilter\
 %%
 
-data_raw = readmatrix("datafile.txt");
+% notch:
+% lowPass2:
+% lowPass1:
+% leadLag1:
+% leadComp1:
+% leadLag2:
+
+data_raw = readmatrix("../../output/data.txt");
 
 data.time = data_raw(:,1);
 data.values = data_raw(:,2:end);           
 
-Ts = mean(diff(data.time))
+Ts = floor(mean(diff(data.time)) * 1.0e6) * 1.0e-6
 
 ind_exc    = [ 1,  4];
 ind_freq   = [ 2,  5];
@@ -26,6 +33,7 @@ subplot(312)
 plot(data.time, data.values(:, ind_sinarg)), grid on, ylabel('sinarg (rad)')
 subplot(313)
 plot(data.time, data.values(:, ind_freq)), grid on, ylabel('fchirp (Hz)')
+xlabel('Time (sec)')
 
 
 % frequency response estimation

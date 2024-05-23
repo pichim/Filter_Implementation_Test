@@ -6,16 +6,18 @@
 
 void lowPass1Init(IIRFilter_t* filter, const float fcut, const float Ts)
 {
-    iirFilterInit(filter, 1);
+    filter->order = 1;
     lowPass1Update(filter, fcut, Ts);
+    iirFilterInit(filter, 0.0f);
 }
 
 void lowPass1Update(IIRFilter_t* filter, const float fcut, const float Ts)
 {
-    filter->A[0] = 1.0f;
-    filter->A[1] = -expf(-Ts * 2.0f * M_PIf * fcut);
-    filter->B[0] = 1.0f + filter->A[1];
+    filter->A[1] = 0.0f;
+    filter->B[0] = 1.0f - expf(-Ts * 2.0f * M_PIf * fcut);
     filter->B[1] = 0.0f;
+    filter->B[2] = 0.0f;
+    filter->A[0] = filter->B[0] - 1.0f;
 }
 
 // First Order Lead or Lag Filter
@@ -24,8 +26,9 @@ void lowPass1Update(IIRFilter_t* filter, const float fcut, const float Ts)
 
 void leadLag1Init(IIRFilter_t* filter, const float fZero, const float fPole, const float Ts)
 {
-    iirFilterInit(filter, 1);
+    filter->order = 1;
     leadLag1Update(filter, fZero, fPole, Ts);
+    iirFilterInit(filter, 0.0f);
 }
 
 void leadLag1Update(IIRFilter_t* filter, const float fZero, const float fPole, const float Ts)
@@ -38,8 +41,9 @@ void leadLag1Update(IIRFilter_t* filter, const float fZero, const float fPole, c
 
 void phaseComp1Init(IIRFilter_t* filter, const float fCenter, const float phaseLift, const float Ts)
 {
-    iirFilterInit(filter, 1);
+    filter->order = 1;
     phaseComp1Update(filter, fCenter, phaseLift, Ts);
+    iirFilterInit(filter, 0.0f);
 }
 
 void phaseComp1Update(IIRFilter_t* filter, const float fCenter, const float phaseLift, const float Ts)
@@ -50,9 +54,11 @@ void phaseComp1Update(IIRFilter_t* filter, const float fCenter, const float phas
     const float alpha = (12.0f - omega * omega) / (6.0f * omega * sqrtf(gain)); // approximate prewarping (series expansion)
     const float k = 1.0f / (1.0f + alpha);
 
+    filter->A[1] = 0.0f;
     filter->B[0] = (1.0f + alpha * gain) * k;
     filter->B[1] = (1.0f - alpha * gain) * k;
-    filter->A[1] = (1.0f - alpha) * k;
+    filter->B[2] = 0.0f;
+    filter->A[0] = filter->B[0] + filter->B[1] - 1.0f;
 }
 
 // Second Order Notch Filter
@@ -61,8 +67,9 @@ void phaseComp1Update(IIRFilter_t* filter, const float fCenter, const float phas
 
 void notchInit(IIRFilter_t* filter, const float fcut, const float D, const float Ts)
 {
-    iirFilterInit(filter, 2);
+    filter->order = 2;
     notchUpdate(filter, fcut, D, Ts);
+    iirFilterInit(filter, 0.0f);
 }
 
 void notchUpdate(IIRFilter_t* filter, const float fcut, const float D, const float Ts)
@@ -77,9 +84,8 @@ void notchUpdate(IIRFilter_t* filter, const float fcut, const float D, const flo
     filter->B[0] = 1.0f / (1.0f + alpha);
     filter->B[1] = -2.0f * cs * filter->B[0];
     filter->B[2] = filter->B[0];
-    filter->A[0] = 1.0f;
-    filter->A[1] = filter->B[1];
-    filter->A[2] = (1.0f - alpha) * filter->B[0];
+    filter->A[1] = (1.0f - alpha) * filter->B[0];
+    filter->A[0] = filter->B[0] + filter->B[1] + filter->B[2] - 1.0f - filter->A[1];
 }
 
 // Second Order Lowpass Filter
@@ -88,8 +94,9 @@ void notchUpdate(IIRFilter_t* filter, const float fcut, const float D, const flo
 
 void lowPass2Init(IIRFilter_t* filter, const float fcut, const float D, const float Ts)
 {
-    iirFilterInit(filter, 2);
+    filter->order = 2;
     lowPass2Update(filter, fcut, D, Ts);
+    iirFilterInit(filter, 0.0f);
 }
 
 void lowPass2Update(IIRFilter_t* filter, const float fcut, const float D, const float Ts)
@@ -97,12 +104,11 @@ void lowPass2Update(IIRFilter_t* filter, const float fcut, const float D, const 
     const float wcut = 2.0f * M_PIf * fcut;
     const float k1 = 2.0f * D * Ts * wcut;
         
-    filter->A[0] = 1.0f;
-    filter->A[2] = 1.0f / (Ts * Ts * wcut * wcut + k1 + 1.0f);
-    filter->A[1] = -(k1 + 2.0f) * filter->A[2];
-    filter->B[0] = 1.0f + filter->A[1] + filter->A[2];
+    filter->A[1] = 1.0f / (Ts * Ts * wcut * wcut + k1 + 1.0f);
+    filter->B[0] = 1.0f - filter->A[1] * (1.0f + k1);
     filter->B[1] = 0.0f;
     filter->B[2] = 0.0f;
+    filter->A[0] = filter->B[0] - 1.0f - filter->A[1];
 }
 
 // Second Order Lead or Lag Filter
@@ -111,8 +117,9 @@ void lowPass2Update(IIRFilter_t* filter, const float fcut, const float D, const 
 
 void leadLag2Init(IIRFilter_t* filter, const float fZero, const float DZero, const float fPole, const float DPole, const float Ts)
 {
-    iirFilterInit(filter, 2);
+    filter->order = 2;
     leadLag2Update(filter, fZero, DZero, fPole, DPole, Ts);
+    iirFilterInit(filter, 0.0f);
 }
 
 void leadLag2Update(IIRFilter_t* filter, const float fZero, const float DZero, const float fPole, const float DPole, const float Ts)
@@ -127,13 +134,19 @@ void leadLag2Update(IIRFilter_t* filter, const float fZero, const float DZero, c
     const float k3 = DPole * Ts * wPole * k1;
     const float k4 = DZero * Ts * k0 * wZero;
     const float k5 = 1.0f / (k2 + 4.0f * (k1 + k3));
-        
+                
     filter->B[0] = (k2 + 4.0f * (k4 + k0)) * k5;
     filter->B[1] = 2.0f * (k2 - 4.0f * k0) * k5;
     filter->B[2] = (k2 + 4.0f * (k0 - k4)) * k5;
-    filter->A[0] = 1.0f;
-    filter->A[1] = 2.0f * (k2 - 4.0f * k1) * k5;
-    filter->A[2] = (k2 + 4.0f * (k1 - k3)) * k5;
+    filter->A[1] = (k2 + 4.0f * (k1 - k3)) * k5;
+    filter->A[0] = filter->B[0] + filter->B[1] + filter->B[2] - 1.0f - filter->A[1];
+}
+
+void iirFilterInit(IIRFilter_t* filter, const float output)
+{
+    filter->w[0] = output * (1.0f - filter->B[0]);
+    if (filter->order == 2)
+        filter->w[1] = filter->w[0] + output * (filter->A[0] - filter->B[1]);
 }
 
 float iirFilterApply(IIRFilter_t* filter, const float input)
@@ -154,21 +167,13 @@ float iirFilterApplyConstrained(IIRFilter_t* filter, const float input, const fl
     return iirFilterApplyFilterUpdate(filter, input, output);
 }
 
-void iirFilterInit(IIRFilter_t* filter, const unsigned order)
-{
-    filter->order = order;
-    for (unsigned i = 0; i < filter->order; ++i) {
-        filter->w[i] = 0.0f;
-    }
-}
-
 float iirFilterApplyFilterUpdate(IIRFilter_t* filter, const float input, const float output)
 {
     // https://dsp.stackexchange.com/questions/72575/transposed-direct-form-ii
     for (unsigned i = 0; i < filter->order - 1; ++i) {
-        filter->w[i] = filter->B[i + 1] * input + filter->w[i + 1] - filter->A[i + 1] * output;
+        filter->w[i] = filter->B[i + 1] * input + filter->w[i + 1] - filter->A[i] * output;
     }
-    filter->w[filter->order - 1] = filter->B[filter->order] * input - filter->A[filter->order] * output;
+    filter->w[filter->order - 1] = filter->B[filter->order] * input - filter->A[filter->order - 1] * output;
 
     return output;
 }
