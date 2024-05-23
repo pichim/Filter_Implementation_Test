@@ -8,7 +8,7 @@ void lowPass1Init(IIRFilter_t* filter, const float fcut, const float Ts)
 {
     filter->order = 1;
     lowPass1Update(filter, fcut, Ts);
-    iirFilterInit(filter, 0.0f);
+    iirFilterReset(filter, 0.0f);
 }
 
 void lowPass1Update(IIRFilter_t* filter, const float fcut, const float Ts)
@@ -28,7 +28,7 @@ void leadLag1Init(IIRFilter_t* filter, const float fZero, const float fPole, con
 {
     filter->order = 1;
     leadLag1Update(filter, fZero, fPole, Ts);
-    iirFilterInit(filter, 0.0f);
+    iirFilterReset(filter, 0.0f);
 }
 
 void leadLag1Update(IIRFilter_t* filter, const float fZero, const float fPole, const float Ts)
@@ -43,7 +43,7 @@ void phaseComp1Init(IIRFilter_t* filter, const float fCenter, const float phaseL
 {
     filter->order = 1;
     phaseComp1Update(filter, fCenter, phaseLift, Ts);
-    iirFilterInit(filter, 0.0f);
+    iirFilterReset(filter, 0.0f);
 }
 
 void phaseComp1Update(IIRFilter_t* filter, const float fCenter, const float phaseLift, const float Ts)
@@ -69,7 +69,7 @@ void notchInit(IIRFilter_t* filter, const float fcut, const float D, const float
 {
     filter->order = 2;
     notchUpdate(filter, fcut, D, Ts);
-    iirFilterInit(filter, 0.0f);
+    iirFilterReset(filter, 0.0f);
 }
 
 void notchUpdate(IIRFilter_t* filter, const float fcut, const float D, const float Ts)
@@ -96,7 +96,7 @@ void lowPass2Init(IIRFilter_t* filter, const float fcut, const float D, const fl
 {
     filter->order = 2;
     lowPass2Update(filter, fcut, D, Ts);
-    iirFilterInit(filter, 0.0f);
+    iirFilterReset(filter, 0.0f);
 }
 
 void lowPass2Update(IIRFilter_t* filter, const float fcut, const float D, const float Ts)
@@ -119,7 +119,7 @@ void leadLag2Init(IIRFilter_t* filter, const float fZero, const float DZero, con
 {
     filter->order = 2;
     leadLag2Update(filter, fZero, DZero, fPole, DPole, Ts);
-    iirFilterInit(filter, 0.0f);
+    iirFilterReset(filter, 0.0f);
 }
 
 void leadLag2Update(IIRFilter_t* filter, const float fZero, const float DZero, const float fPole, const float DPole, const float Ts)
@@ -142,7 +142,7 @@ void leadLag2Update(IIRFilter_t* filter, const float fZero, const float DZero, c
     filter->A[0] = filter->B[0] + filter->B[1] + filter->B[2] - 1.0f - filter->A[1];
 }
 
-void iirFilterInit(IIRFilter_t* filter, const float output)
+void iirFilterReset(IIRFilter_t* filter, const float output)
 {
     filter->w[0] = output * (1.0f - filter->B[0]);
     if (filter->order == 2)

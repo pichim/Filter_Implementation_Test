@@ -8,7 +8,7 @@ void IIRFilter::lowPass1Init(const float fcut, const float Ts)
 {
     filter.order = 1;
     lowPass1Update(fcut, Ts);
-    init(0.0f);
+    reset(0.0f);
 }
 
 void IIRFilter::lowPass1Update(const float fcut, const float Ts)
@@ -28,7 +28,7 @@ void IIRFilter::leadLag1Init(const float fZero, const float fPole, const float T
 {
     filter.order = 1;
     leadLag1Update(fZero, fPole, Ts);
-    init(0.0f);
+    reset(0.0f);
 }
 
 void IIRFilter::leadLag1Update(const float fZero, const float fPole, const float Ts)
@@ -43,7 +43,7 @@ void IIRFilter::phaseComp1Init(const float fCenter, const float phaseLift, const
 {
     filter.order = 1;
     phaseComp1Update(fCenter, phaseLift, Ts);
-    init(0.0f);
+    reset(0.0f);
 }
 
 void IIRFilter::phaseComp1Update(const float fCenter, const float phaseLift, const float Ts)
@@ -69,7 +69,7 @@ void IIRFilter::notchInit(const float fcut, const float D, const float Ts)
 {
     filter.order = 2;
     notchUpdate(fcut, D, Ts);
-    init(0.0f);
+    reset(0.0f);
 }
 
 void IIRFilter::notchUpdate(const float fcut, const float D, const float Ts)
@@ -96,7 +96,7 @@ void IIRFilter::lowPass2Init(const float fcut, const float D, const float Ts)
 {
     filter.order = 2;
     lowPass2Update(fcut, D, Ts);
-    init(0.0f);
+    reset(0.0f);
 }
 
 void IIRFilter::lowPass2Update(const float fcut, const float D, const float Ts)
@@ -119,7 +119,7 @@ void IIRFilter::leadLag2Init(const float fZero, const float DZero, const float f
 {
     filter.order = 2;
     leadLag2Update(fZero, DZero, fPole, DPole, Ts);
-    init(0.0f);
+    reset(0.0f);
 }
 
 void IIRFilter::leadLag2Update(const float fZero, const float DZero, const float fPole, const float DPole, const float Ts)
@@ -142,7 +142,7 @@ void IIRFilter::leadLag2Update(const float fZero, const float DZero, const float
     filter.A[0] = filter.B[0] + filter.B[1] + filter.B[2] - 1.0f - filter.A[1];
 }
 
-void IIRFilter::init(const float output)
+void IIRFilter::reset(const float output)
 {
     filter.w[0] = output * (1.0f - filter.B[0]);
     if (filter.order == 2)

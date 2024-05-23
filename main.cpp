@@ -4,9 +4,11 @@
 
 #include "Chirp.h"
 #include "IIRFilter.h"
+#include "FadingNotchFilter.h"
 
 #include "chirp.h"
 #include "iirfilter.h"
+#include "fadingnotchfilter.h"
 
 #define TS 50.0e-6f
 
@@ -14,6 +16,7 @@
 #define CHIRP_F0 (1.0f / CHIRP_T1)
 #define CHIRP_F1 (1.0f / (2.0f * TS))
 #define CHIRP_OFFSET 5.0f
+#define CHIRP_AMPLITUDE 3.0f
 #define CHIRP_T_SETTLE 2.0f
 
 #define NOTCH_F_CUT 1.0e3f
@@ -35,6 +38,11 @@
 #define LEADLAG2_F_POLE 1000.0f
 #define LEADLAG2_D_POLE 0.12f
 
+#define FADING_NOTCH_F_CUT 0.0f
+#define FADING_NOTCH_D 0.1f
+#define FADING_NOTCH_F_FADE_MIN 100.0f
+#define FADING_NOTCH_F_FADE_MAX 1000.0f
+
 
 int main(int argc, char *argv[])
 {
@@ -43,54 +51,62 @@ int main(int argc, char *argv[])
 
     IIRFilter notch_cpp;
     notch_cpp.notchInit(NOTCH_F_CUT, NOTCH_D, TS);
-    notch_cpp.init(CHIRP_OFFSET);
+    notch_cpp.reset(CHIRP_OFFSET);
 
     IIRFilter lowPass2_cpp;
     lowPass2_cpp.lowPass2Init(LOWPASS2_F_CUT, LOWPASS2_D, TS);
-    lowPass2_cpp.init(CHIRP_OFFSET);
+    lowPass2_cpp.reset(CHIRP_OFFSET);
 
     IIRFilter lowPass1_cpp;
     lowPass1_cpp.lowPass1Init(LOWPASS1_F_CUT, TS);
-    lowPass1_cpp.init(CHIRP_OFFSET);
+    lowPass1_cpp.reset(CHIRP_OFFSET);
 
     IIRFilter leadLag1_cpp;
     leadLag1_cpp.leadLag1Init(LEADLAG1_F_ZERO, LEADLAG1_F_POLE, TS);
-    leadLag1_cpp.init(CHIRP_OFFSET);
+    leadLag1_cpp.reset(CHIRP_OFFSET);
 
     IIRFilter phaseComp_cpp;
     phaseComp_cpp.phaseComp1Init(PHASECOMP1_F_CENTER, PHASECOMP1_PHASE_LIFT, TS);
-    phaseComp_cpp.init(CHIRP_OFFSET);
+    phaseComp_cpp.reset(CHIRP_OFFSET);
     
     IIRFilter leadLag2_cpp;
     leadLag2_cpp.leadLag2Init(LEADLAG2_F_ZERO, LEADLAG2_D_ZERO, LEADLAG2_F_POLE, LEADLAG2_D_POLE, TS);
-    leadLag2_cpp.init(CHIRP_OFFSET);
+    leadLag2_cpp.reset(CHIRP_OFFSET);
+
+    FadingNotchFilter fadingNotch_cpp;
+    fadingNotch_cpp.fadingNotchInit(FADING_NOTCH_F_CUT, FADING_NOTCH_D, FADING_NOTCH_F_FADE_MIN, FADING_NOTCH_F_FADE_MAX, TS);
+    fadingNotch_cpp.reset(FADING_NOTCH_F_CUT, CHIRP_OFFSET);
 
     chirp_t chirp_c;
     chirpInit(&chirp_c, CHIRP_F0, CHIRP_F1, CHIRP_T1, TS);
 
     IIRFilter_t notch_c;
     notchInit(&notch_c, NOTCH_F_CUT, NOTCH_D, TS);
-    iirFilterInit(&notch_c, CHIRP_OFFSET);
+    iirFilterReset(&notch_c, CHIRP_OFFSET);
 
     IIRFilter_t lowPass2_c;
     lowPass2Init(&lowPass2_c, LOWPASS2_F_CUT, LOWPASS2_D, TS);
-    iirFilterInit(&lowPass2_c, CHIRP_OFFSET);
+    iirFilterReset(&lowPass2_c, CHIRP_OFFSET);
 
     IIRFilter_t lowPass1_c;
     lowPass1Init(&lowPass1_c, LOWPASS1_F_CUT, TS);
-    iirFilterInit(&lowPass1_c, CHIRP_OFFSET);
+    iirFilterReset(&lowPass1_c, CHIRP_OFFSET);
 
     IIRFilter_t leadLag1_c;
     leadLag1Init(&leadLag1_c, LEADLAG1_F_ZERO, LEADLAG1_F_POLE, TS);
-    iirFilterInit(&leadLag1_c, CHIRP_OFFSET);
+    iirFilterReset(&leadLag1_c, CHIRP_OFFSET);
 
     IIRFilter_t phaseComp_c;
     phaseComp1Init(&phaseComp_c, PHASECOMP1_F_CENTER, PHASECOMP1_PHASE_LIFT, TS);
-    iirFilterInit(&phaseComp_c, CHIRP_OFFSET);
+    iirFilterReset(&phaseComp_c, CHIRP_OFFSET);
 
     IIRFilter_t leadLag2_c;
     leadLag2Init(&leadLag2_c, LEADLAG2_F_ZERO, LEADLAG2_D_ZERO, LEADLAG2_F_POLE, LEADLAG2_D_POLE, TS);
-    iirFilterInit(&leadLag2_c, CHIRP_OFFSET);
+    iirFilterReset(&leadLag2_c, CHIRP_OFFSET);
+
+    FadingNotchFilter_t fadingNotch_c;
+    fadingNotchInit(&fadingNotch_c, FADING_NOTCH_F_CUT, FADING_NOTCH_D, FADING_NOTCH_F_FADE_MIN, FADING_NOTCH_F_FADE_MAX, TS);
+    fadingNotchFilterReset(&fadingNotch_c, FADING_NOTCH_F_CUT, CHIRP_OFFSET);
 
     std::ofstream ofs ("output/data.txt");
 
@@ -121,8 +137,8 @@ int main(int argc, char *argv[])
                 chirp_freq_c = chirp_c.fchirp;
                 chirp_sinarg_c = chirp_c.sinarg;
 
-                input_cpp = chirp_exc_cpp + CHIRP_OFFSET;
-                input_c = chirp_exc_c + CHIRP_OFFSET;
+                input_cpp = CHIRP_AMPLITUDE * chirp_exc_cpp + CHIRP_OFFSET;
+                input_c = CHIRP_AMPLITUDE * chirp_exc_c + CHIRP_OFFSET;
             } else {
                 chirp_update_finished = true;
             }
@@ -149,7 +165,11 @@ int main(int argc, char *argv[])
                                                         << phaseComp_cpp.apply(input_cpp) << ", "          // 15
                                                         << iirFilterApply(&phaseComp_c, input_c) << ", "        // 16
                                                         << leadLag2_cpp.apply(input_cpp) << ", "           // 17
-                                                        << iirFilterApply(&leadLag2_c, input_c) << std::endl;   // 18
+                                                        << iirFilterApply(&leadLag2_c, input_c) << ", "           // 18
+                                                        << input_cpp << ", "           // 19
+                                                        << input_c << ", "           // 20
+                                                        << fadingNotch_cpp.apply(chirp_freq_cpp, input_cpp) << ", "           // 21
+                                                        << fadingNotchFilterApply(&fadingNotch_c, chirp_freq_cpp, input_c) << std::endl;   // 22
 
     }
 

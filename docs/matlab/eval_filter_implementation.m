@@ -8,6 +8,7 @@ addpath iirfilter\
 % leadLag1:
 % leadComp1:
 % leadLag2:
+% fadingNotch
 
 data_raw = readmatrix("../../output/data.txt");
 
@@ -25,6 +26,8 @@ ind_lp1    = [11, 12];
 ind_ll1    = [13, 14];
 ind_pc1    = [15, 16];
 ind_ll2    = [17, 18];
+ind_inp    = [19, 20];
+ind_fnotch = [21, 22];
 
 figure(1)
 subplot(311)
@@ -61,13 +64,13 @@ s = tf('s');
 % #define NOTCH_D 0.1f
 fn = 1.0e3;
 Dn = 0.1;
-signal = "notch"
+signal = "notch";
 
 
 figure(2)
 plot(data.time, data.values(:, ind_notch)), grid on, title(signal)
 
-inp = data.values(:,ind_exc(1));
+inp = data.values(:,ind_inp(1));
 out = data.values(:,ind_notch(1));
 [Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
 
@@ -90,12 +93,12 @@ set(gca, 'YScale', 'linear')
 % #define LOWPASS2_D (sqrtf(3.0f) / 2.0f)
 flp2 = 60.0;
 Dlp2 = sqrt(3.0) / 2.0;
-signal = "lp2"
+signal = "lp2";
 
 figure(4)
-plot(data.time, data.values(:, ind_notch)), grid on, title(signal)
+plot(data.time, data.values(:, ind_lp2)), grid on, title(signal)
 
-inp = data.values(:,ind_exc(1));
+inp = data.values(:,ind_inp(1));
 out = data.values(:,ind_lp2(1));
 [Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
 
@@ -116,12 +119,12 @@ set(gca, 'YScale', 'linear')
 
 % #define LOWPASS1_F_CUT 60.0f
 flp1 = 60.0;
-signal = "lp1"
+signal = "lp1";
 
 figure(6)
-plot(data.time, data.values(:, ind_notch)), grid on, title(signal)
+plot(data.time, data.values(:, ind_lp1)), grid on, title(signal)
 
-inp = data.values(:,ind_exc(1));
+inp = data.values(:,ind_inp(1));
 out = data.values(:,ind_lp1(1));
 [Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
 
@@ -144,12 +147,12 @@ set(gca, 'YScale', 'linear')
 % #define LEADLAG1_F_POLE 200.0f
 fz1 = 60.0;
 fp1 = 200.0;
-signal = "ll1"
+signal = "ll1";
 
 figure(8)
-plot(data.time, data.values(:, ind_notch)), grid on, title(signal)
+plot(data.time, data.values(:, ind_ll1)), grid on, title(signal)
 
-inp = data.values(:,ind_exc(1));
+inp = data.values(:,ind_inp(1));
 out = data.values(:,ind_ll1(1));
 [Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
 
@@ -173,12 +176,12 @@ set(gca, 'YScale', 'linear')
 % #define PHASECOMP1_PHASE_LIFT -45.0f
 fc1 = 80.0;
 phal1 = -45.0;
-signal = "pc1"
+signal = "pc1";
 
 figure(10)
-plot(data.time, data.values(:, ind_notch)), grid on, title(signal)
+plot(data.time, data.values(:, ind_pc1)), grid on, title(signal)
 
-inp = data.values(:,ind_exc(1));
+inp = data.values(:,ind_inp(1));
 out = data.values(:,ind_pc1(1));
 [Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
 
@@ -207,12 +210,12 @@ fzll2 = 20.0;
 Dzll2 = 0.08;
 fpll2 = 1000.0;
 Dpll2 = 0.12;
-signal = "ll2"
+signal = "ll2";
 
 figure(12)
-plot(data.time, data.values(:, ind_notch)), grid on, title(signal)
+plot(data.time, data.values(:, ind_ll2)), grid on, title(signal)
 
-inp = data.values(:,ind_exc(1));
+inp = data.values(:,ind_inp(1));
 out = data.values(:,ind_ll2(1));
 [Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
 
@@ -228,4 +231,21 @@ subplot(212)
 bodemag(Cest, 2*pi*Cest.Frequency(Cest.Frequency < 1/2/Ts), opt), grid on
 title('')
 set(gca, 'YScale', 'linear')
+
+
+%%
+
+% fading notch
+
+signal = "fnotch";
+
+figure(14)
+subplot(221)
+plot(data.time, data.values(:, [ind_inp(1), ind_fnotch(1)])), grid on, title(signal)
+subplot(222)
+plot(data.time, data.values(:, [ind_inp(2), ind_fnotch(2)])), grid on, title(signal)
+subplot(223)
+plot(data.values(:, ind_freq(1)), data.values(:, ind_fnotch(1))), grid on
+subplot(224)
+plot(data.values(:, ind_freq(2)), data.values(:, ind_fnotch(2))), grid on
 
