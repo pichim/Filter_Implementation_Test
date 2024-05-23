@@ -44,11 +44,12 @@ window   = hann(Nest);
 
 inp = data.values(:,ind_exc(1));
 out = data.values(:,ind_notch(1));
-[G, C] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
+[Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
 
 opt = bodeoptions('cstprefs');
 opt.MagUnits = 'abs';
 opt.MagScale = 'linear';
+opt.yLim = {[-0.05 1.05], [-0.05 1.05]};
 
 
 s = tf('s');
@@ -60,22 +61,26 @@ s = tf('s');
 % #define NOTCH_D 0.1f
 fn = 1.0e3;
 Dn = 0.1;
+signal = "notch"
+
 
 figure(2)
-plot(data.time, data.values(:, ind_notch)), grid on, ylabel('notch')
+plot(data.time, data.values(:, ind_notch)), grid on, title(signal)
 
 inp = data.values(:,ind_exc(1));
 out = data.values(:,ind_notch(1));
-[G, C] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
+[Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
 
 wn = 2*pi*fn;
 Gc = (s^2 + wn^2) / (s^2 + 2*Dn*wn*s + wn^2);
 
 figure(3)
 subplot(211)
-bode(G, get_notch(fn, Dn, Ts), Gc, 2*pi*G.Frequency(G.Frequency < 1/2/Ts)), grid on
+bode(Gest, get_notch(fn, Dn, Ts), Gc, 2*pi*Gest.Frequency(Gest.Frequency < 1/2/Ts)), grid on
+title(signal)
 subplot(212)
-bodemag(C, 2*pi*C.Frequency(C.Frequency < 1/2/Ts), opt), grid on
+bodemag(Cest, 2*pi*Cest.Frequency(Cest.Frequency < 1/2/Ts), opt), grid on
+title('')
 set(gca, 'YScale', 'linear')
 
 
@@ -85,22 +90,25 @@ set(gca, 'YScale', 'linear')
 % #define LOWPASS2_D (sqrtf(3.0f) / 2.0f)
 flp2 = 60.0;
 Dlp2 = sqrt(3.0) / 2.0;
+signal = "lp2"
 
 figure(4)
-plot(data.time, data.values(:, ind_lp2)), grid on, ylabel('notch')
+plot(data.time, data.values(:, ind_notch)), grid on, title(signal)
 
 inp = data.values(:,ind_exc(1));
 out = data.values(:,ind_lp2(1));
-[G, C] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
+[Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
 
-wlp2 = 2*pi*flp2;
+wlp2 = 2.0*pi*flp2;
 Gc = wlp2^2 / (s^2 + 2*Dlp2*wlp2*s + wlp2^2);
 
 figure(5)
 subplot(211)
-bode(G, get_lowpass2(flp2, Dlp2, Ts), Gc, 2*pi*G.Frequency(G.Frequency < 1/2/Ts)), grid on
+bode(Gest, get_lowpass2(flp2, Dlp2, Ts), Gc, 2*pi*Gest.Frequency(Gest.Frequency < 1/2/Ts)), grid on
+title(signal)
 subplot(212)
-bodemag(C, 2*pi*C.Frequency(C.Frequency < 1/2/Ts), opt), grid on
+bodemag(Cest, 2*pi*Cest.Frequency(Cest.Frequency < 1/2/Ts), opt), grid on
+title('')
 set(gca, 'YScale', 'linear')
 
 
@@ -108,22 +116,25 @@ set(gca, 'YScale', 'linear')
 
 % #define LOWPASS1_F_CUT 60.0f
 flp1 = 60.0;
+signal = "lp1"
 
 figure(6)
-plot(data.time, data.values(:, ind_lp1)), grid on, ylabel('notch')
+plot(data.time, data.values(:, ind_notch)), grid on, title(signal)
 
 inp = data.values(:,ind_exc(1));
 out = data.values(:,ind_lp1(1));
-[G, C] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
+[Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
 
 wlp1 = 2*pi*flp1;
 Gc = wlp1 / (s + wlp1);
 
 figure(7)
 subplot(211)
-bode(G, get_lowpass1(flp2, Ts), Gc, 2*pi*G.Frequency(G.Frequency < 1/2/Ts)), grid on
+bode(Gest, get_lowpass1(flp2, Ts), Gc, 2*pi*Gest.Frequency(Gest.Frequency < 1/2/Ts)), grid on
+title(signal)
 subplot(212)
-bodemag(C, 2*pi*C.Frequency(C.Frequency < 1/2/Ts), opt), grid on
+bodemag(Cest, 2*pi*Cest.Frequency(Cest.Frequency < 1/2/Ts), opt), grid on
+title('')
 set(gca, 'YScale', 'linear')
 
 
@@ -133,13 +144,14 @@ set(gca, 'YScale', 'linear')
 % #define LEADLAG1_F_POLE 200.0f
 fz1 = 60.0;
 fp1 = 200.0;
+signal = "ll1"
 
 figure(8)
-plot(data.time, data.values(:, ind_ll1)), grid on, ylabel('notch')
+plot(data.time, data.values(:, ind_notch)), grid on, title(signal)
 
 inp = data.values(:,ind_exc(1));
 out = data.values(:,ind_ll1(1));
-[G, C] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
+[Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
 
 wz1 = 2*pi*fz1;
 wp1 = 2*pi*fp1;
@@ -147,9 +159,11 @@ Gc = (wp1 / wz1) * (s + wz1) / (s + wp1);
 
 figure(9)
 subplot(211)
-bode(G, get_leadlag1(fz1, fp1, Ts), Gc, 2*pi*G.Frequency(G.Frequency < 1/2/Ts)), grid on
+bode(Gest, get_leadlag1(fz1, fp1, Ts), Gc, 2*pi*Gest.Frequency(Gest.Frequency < 1/2/Ts)), grid on
+title(signal)
 subplot(212)
-bodemag(C, 2*pi*C.Frequency(C.Frequency < 1/2/Ts), opt), grid on
+bodemag(Cest, 2*pi*Cest.Frequency(Cest.Frequency < 1/2/Ts), opt), grid on
+title('')
 set(gca, 'YScale', 'linear')
 
 
@@ -159,24 +173,27 @@ set(gca, 'YScale', 'linear')
 % #define PHASECOMP1_PHASE_LIFT -45.0f
 fc1 = 80.0;
 phal1 = -45.0;
+signal = "pc1"
 
 figure(10)
-plot(data.time, data.values(:, ind_pc1)), grid on, ylabel('notch')
+plot(data.time, data.values(:, ind_notch)), grid on, title(signal)
 
 inp = data.values(:,ind_exc(1));
 out = data.values(:,ind_pc1(1));
-[G, C] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
+[Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
 
-wc1 = 2*pi*fc1;
-sinphi = sin(phal1*pi/180);
-a = (1 - sinphi) / (1 + sinphi);
-Gc = (1/sqrt(a)*s + wc1) / (sqrt(a)*s + wc1);
+wc1 = 2.0*pi*fc1;
+sinphi = sin(phal1*pi/180.0);
+a = (1.0 - sinphi) / (1.0 + sinphi);
+Gc = (1/a*s + wc1/sqrt(a)) / (s + wc1/sqrt(a));
 
 figure(11)
 subplot(211)
-bode(G, get_phase_comp(fc1, phal1, Ts), Gc, 2*pi*G.Frequency(G.Frequency < 1/2/Ts)), grid on
+bode(Gest, get_phase_comp(fc1, phal1, Ts), Gc, 2*pi*Gest.Frequency(Gest.Frequency < 1/2/Ts)), grid on
+title(signal)
 subplot(212)
-bodemag(C, 2*pi*C.Frequency(C.Frequency < 1/2/Ts), opt), grid on
+bodemag(Cest, 2*pi*Cest.Frequency(Cest.Frequency < 1/2/Ts), opt), grid on
+title('')
 set(gca, 'YScale', 'linear')
 
 
@@ -190,13 +207,14 @@ fzll2 = 20.0;
 Dzll2 = 0.08;
 fpll2 = 1000.0;
 Dpll2 = 0.12;
+signal = "ll2"
 
 figure(12)
-plot(data.time, data.values(:, ind_ll2)), grid on, ylabel('notch')
+plot(data.time, data.values(:, ind_notch)), grid on, title(signal)
 
 inp = data.values(:,ind_exc(1));
 out = data.values(:,ind_ll2(1));
-[G, C] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
+[Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
 
 wzll2 = 2*pi*fzll2;
 wpll2 = 2*pi*fpll2;
@@ -204,8 +222,10 @@ Gc = (wpll2^2 / wzll2^2) * (s^2 + 2*Dzll2*wzll2*s + wzll2^2) / (s^2 + 2*Dpll2*wp
 
 figure(13)
 subplot(211)
-bode(G, get_leadlag2(fzll2, Dzll2, fpll2, Dpll2, Ts), Gc, 2*pi*G.Frequency(G.Frequency < 1/2/Ts)), grid on
+bode(Gest, get_leadlag2(fzll2, Dzll2, fpll2, Dpll2, Ts), Gc, 2*pi*Gest.Frequency(Gest.Frequency < 1/2/Ts)), grid on
+title(signal)
 subplot(212)
-bodemag(C, 2*pi*C.Frequency(C.Frequency < 1/2/Ts), opt), grid on
+bodemag(Cest, 2*pi*Cest.Frequency(Cest.Frequency < 1/2/Ts), opt), grid on
+title('')
 set(gca, 'YScale', 'linear')
 

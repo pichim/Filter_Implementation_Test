@@ -54,11 +54,11 @@ void phaseComp1Update(IIRFilter_t* filter, const float fCenter, const float phas
     const float alpha = (12.0f - omega * omega) / (6.0f * omega * sqrtf(gain)); // approximate prewarping (series expansion)
     const float k = 1.0f / (1.0f + alpha);
 
-    filter->A[1] = 0.0f;
     filter->B[0] = (1.0f + alpha * gain) * k;
     filter->B[1] = (1.0f - alpha * gain) * k;
     filter->B[2] = 0.0f;
-    filter->A[0] = filter->B[0] + filter->B[1] - 1.0f;
+    filter->A[0] = (1.0f - alpha) * k;
+    filter->A[1] = 0.0f;
 }
 
 // Second Order Notch Filter
@@ -85,7 +85,7 @@ void notchUpdate(IIRFilter_t* filter, const float fcut, const float D, const flo
     filter->B[1] = -2.0f * cs * filter->B[0];
     filter->B[2] = filter->B[0];
     filter->A[1] = (1.0f - alpha) * filter->B[0];
-    filter->A[0] = filter->B[0] + filter->B[1] + filter->B[2] - 1.0f - filter->A[1];
+    filter->A[0] = filter->B[1];
 }
 
 // Second Order Lowpass Filter
