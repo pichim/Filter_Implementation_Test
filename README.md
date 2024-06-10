@@ -1,5 +1,15 @@
 # Filter Implementation Test
 
+## TODO
+
+- Check sn in notch update, unused?
+- Implement fading notch in MATLAB
+- Check if frequency response estimation in python is correct and double check MATLAB and Python version
+- Implement PI controller in C and C++
+- Further improve SDFT towards dynamic notch implementation
+- Move MATLAB SDFT implementation to this repo
+- Implement first order filters
+
 ## Implementation
 
 IIR filter, fading notch and chirp signal generator implementation in C and  in C++.

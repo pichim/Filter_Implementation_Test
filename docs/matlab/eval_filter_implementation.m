@@ -18,7 +18,7 @@ data.values = data_raw(:,2:end);
 Ts = floor(mean(diff(data.time)) * 1.0e6) * 1.0e-6
 
 ind_exc    = [ 1,  4];
-ind_freq   = [ 2,  5];
+ind_fchirp = [ 2,  5];
 ind_sinarg = [ 3,  6];
 ind_notch  = [ 7,  8];
 ind_lp2    = [ 9, 10];
@@ -35,7 +35,7 @@ plot(data.time, data.values(:, ind_exc)), grid on, ylabel('exc')
 subplot(312)
 plot(data.time, data.values(:, ind_sinarg)), grid on, ylabel('sinarg (rad)')
 subplot(313)
-plot(data.time, data.values(:, ind_freq)), grid on, ylabel('fchirp (Hz)')
+plot(data.time, data.values(:, ind_fchirp)), grid on, ylabel('fchirp (Hz)')
 xlabel('Time (sec)')
 
 
@@ -245,7 +245,7 @@ plot(data.time, data.values(:, [ind_inp(1), ind_fnotch(1)])), grid on, title(sig
 subplot(222)
 plot(data.time, data.values(:, [ind_inp(2), ind_fnotch(2)])), grid on, title(signal)
 subplot(223)
-plot(data.values(:, ind_freq(1)), data.values(:, ind_fnotch(1))), grid on
+plot(data.values(:, ind_fchirp(1)), data.values(:, ind_fnotch(1))), grid on
 subplot(224)
-plot(data.values(:, ind_freq(2)), data.values(:, ind_fnotch(2))), grid on
+plot(data.values(:, ind_fchirp(2)), data.values(:, ind_fnotch(2))), grid on
 

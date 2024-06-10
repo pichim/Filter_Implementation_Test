@@ -2,6 +2,10 @@
 
 #include <math.h>
 
+#ifndef M_PIf
+    #define M_PIf 3.14159265358979323846f /* pi */
+#endif
+
 class IIRFilter {
 public:
     IIRFilter() {};
@@ -36,5 +40,5 @@ private:
         float w[2]; // [w1, w2]
     } filter;
 
-    float applyFilterUpdate(const float input, const float output);
+    void applyFilterUpdate(const float input, const float output);
 };

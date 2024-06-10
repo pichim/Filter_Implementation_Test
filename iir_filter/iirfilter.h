@@ -34,4 +34,5 @@ void iirFilterReset(IIRFilter_t* filter, const float output);
 float iirFilterApply(IIRFilter_t* filter, const float input);
 float iirFilterApplyConstrained(IIRFilter_t* filter, const float input, const float yMin, const float yMax);
 
-float iirFilterApplyFilterUpdate(IIRFilter_t* filter, const float input, const float output);
+// helper function
+void iirFilterApplyFilterUpdate(IIRFilter_t* filter, const float input, const float output);

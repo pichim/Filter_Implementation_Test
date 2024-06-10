@@ -152,28 +152,28 @@ void iirFilterReset(IIRFilter_t* filter, const float output)
 float iirFilterApply(IIRFilter_t* filter, const float input)
 {
     const float output = filter->B[0] * input + filter->w[0];
-    return iirFilterApplyFilterUpdate(filter, input, output);
+    iirFilterApplyFilterUpdate(filter, input, output);
+
+    return output;
 }
 
 float iirFilterApplyConstrained(IIRFilter_t* filter, const float input, const float yMin, const float yMax)
 {
-    const float outputUnconstrained = filter->B[0] * input + filter->w[0];
-
     // constrain output
+    const float outputUnconstrained = filter->B[0] * input + filter->w[0];
     const float output = (outputUnconstrained < yMin) ? yMin
                        : (outputUnconstrained > yMax) ? yMax
                        :  outputUnconstrained;
+    iirFilterApplyFilterUpdate(filter, input, output);
 
-    return iirFilterApplyFilterUpdate(filter, input, output);
+    return output;
 }
 
-float iirFilterApplyFilterUpdate(IIRFilter_t* filter, const float input, const float output)
+void iirFilterApplyFilterUpdate(IIRFilter_t* filter, const float input, const float output)
 {
     // https://dsp.stackexchange.com/questions/72575/transposed-direct-form-ii
     for (unsigned i = 0; i < filter->order - 1; ++i) {
         filter->w[i] = filter->B[i + 1] * input + filter->w[i + 1] - filter->A[i] * output;
     }
     filter->w[filter->order - 1] = filter->B[filter->order] * input - filter->A[filter->order - 1] * output;
-
-    return output;
 }

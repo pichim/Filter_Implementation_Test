@@ -31,7 +31,7 @@ float fadingNotchFilterApplyConstrained(FadingNotchFilter_t* fadingNotch, const 
 
 float fadingNotchFilterApplyFading(FadingNotchFilter_t* fadingNotch, const float fcut, const float input, const float output)
 {
-        if (fcut < fadingNotch->fFadeMin) 
+    if (fcut < fadingNotch->fFadeMin) 
         return input;
     else if (fcut > fadingNotch->fFadeMax)
         return output;
