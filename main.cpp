@@ -11,11 +11,6 @@
 #include "iirfilter.h"
 #include "fadingnotchfilter.h"
 
-/**
- * TODO:
- * - Initialization of differentiating filters needs to be fixed
- */
-
 #define TS 50.0e-6f
 
 #define CHIRP_T1 5.0f

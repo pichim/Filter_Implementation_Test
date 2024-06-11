@@ -2,13 +2,12 @@
 
 ## TODO
 
-- Check sn in notch update, unused?
-- Implement fading notch in MATLAB
+- Initialization of differentiating filters needs to be fixed
 - Check if frequency response estimation in python is correct and double check MATLAB and Python version
-- Implement PI controller in C and C++
+- Implement PID controller in C and C++
 - Further improve SDFT towards dynamic notch implementation
 - Move MATLAB SDFT implementation to this repo
-- Implement first order filters
+- Implement first order filters as first order filters
 
 ## Implementation
 
