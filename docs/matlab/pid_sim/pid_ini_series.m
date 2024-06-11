@@ -1,5 +1,5 @@
 clc, clear variables
-addpath iirfilter\
+addpath ../iirfilter/
 %%
 
 Ts = 50e-6;

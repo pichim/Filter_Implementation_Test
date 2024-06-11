@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <math.h>
 
 #include "Chirp.h"
 #include "IIRFilter.h"
@@ -9,6 +10,11 @@
 #include "chirp.h"
 #include "iirfilter.h"
 #include "fadingnotchfilter.h"
+
+/**
+ * TODO:
+ * - Initialization of differentiating filters needs to be fixed
+ */
 
 #define TS 50.0e-6f
 
@@ -42,6 +48,8 @@
 #define FADING_NOTCH_D 0.1f
 #define FADING_NOTCH_F_FADE_MIN 100.0f
 #define FADING_NOTCH_F_FADE_MAX 1000.0f
+
+#define DIFF_LOWPASS1_F_CUT 120.0f
 
 
 int main(int argc, char *argv[])
@@ -77,6 +85,18 @@ int main(int argc, char *argv[])
     fadingNotch_cpp.fadingNotchInit(FADING_NOTCH_F_CUT, FADING_NOTCH_D, FADING_NOTCH_F_FADE_MIN, FADING_NOTCH_F_FADE_MAX, TS);
     fadingNotch_cpp.reset(FADING_NOTCH_F_CUT, CHIRP_OFFSET);
 
+    IIRFilter integrator_cpp;
+    integrator_cpp.integratorInit(TS);
+    integrator_cpp.reset(CHIRP_OFFSET);
+
+    IIRFilter differentiator_cpp;
+    differentiator_cpp.differentiatorInit(TS);
+    differentiator_cpp.reset(CHIRP_OFFSET); // differentiating a constant input results in zero
+
+    IIRFilter differentiatingLowPass1_cpp;
+    differentiatingLowPass1_cpp.differentiatingLowPass1Init(DIFF_LOWPASS1_F_CUT, TS);
+    differentiatingLowPass1_cpp.reset(CHIRP_OFFSET); // differentiating a constant input results in zero
+
     chirp_t chirp_c;
     chirpInit(&chirp_c, CHIRP_F0, CHIRP_F1, CHIRP_T1, TS);
 
@@ -107,6 +127,18 @@ int main(int argc, char *argv[])
     FadingNotchFilter_t fadingNotch_c;
     fadingNotchInit(&fadingNotch_c, FADING_NOTCH_F_CUT, FADING_NOTCH_D, FADING_NOTCH_F_FADE_MIN, FADING_NOTCH_F_FADE_MAX, TS);
     fadingNotchFilterReset(&fadingNotch_c, FADING_NOTCH_F_CUT, CHIRP_OFFSET);
+
+    IIRFilter_t integrator_c;
+    integratorInit(&integrator_c, TS);
+    iirFilterReset(&integrator_c, CHIRP_OFFSET);
+
+    IIRFilter_t differentiator_c;
+    differentiatorInit(&differentiator_c, TS);
+    iirFilterReset(&differentiator_c, CHIRP_OFFSET); // differentiating a constant input results in zero
+
+    IIRFilter_t differentiatingLowPass1_c;
+    differentiatingLowPass1Init(&differentiatingLowPass1_c, DIFF_LOWPASS1_F_CUT, TS);
+    iirFilterReset(&differentiatingLowPass1_c, CHIRP_OFFSET); // differentiating a constant input results in zero
 
     std::ofstream ofs ("output/data.txt");
 
@@ -147,29 +179,35 @@ int main(int argc, char *argv[])
         if (chirp_update_finished)
             break;
 
-        ofs  << std::setprecision(9) << std::scientific << time << ", "                                      //  0
-                                                        << chirp_exc_cpp << ", "                               //  1
-                                                        << chirp_freq_cpp << ", "                              //  2
-                                                        << chirp_sinarg_cpp << ", "                            //  3
-                                                        << chirp_exc_c << ", "                                      //  4
-                                                        << chirp_freq_c << ", "                                   //  5
-                                                        << chirp_sinarg_c << ", "                                   //  6
-                                                        << notch_cpp.apply(input_cpp) << ", "              //  7
-                                                        << iirFilterApply(&notch_c, input_c) << ", "            //  8
-                                                        << lowPass2_cpp.apply(input_cpp) << ", "           //  9
-                                                        << iirFilterApply(&lowPass2_c, input_c) << ", "         // 10
-                                                        << lowPass1_cpp.apply(input_cpp) << ", "           // 11
-                                                        << iirFilterApply(&lowPass1_c, input_c) << ", "         // 12
-                                                        << leadLag1_cpp.apply(input_cpp) << ", "           // 13
-                                                        << iirFilterApply(&leadLag1_c, input_c) << ", "         // 14
-                                                        << phaseComp_cpp.apply(input_cpp) << ", "          // 15
-                                                        << iirFilterApply(&phaseComp_c, input_c) << ", "        // 16
-                                                        << leadLag2_cpp.apply(input_cpp) << ", "           // 17
-                                                        << iirFilterApply(&leadLag2_c, input_c) << ", "           // 18
-                                                        << input_cpp << ", "           // 19
-                                                        << input_c << ", "           // 20
-                                                        << fadingNotch_cpp.apply(chirp_freq_cpp, input_cpp) << ", "           // 21
-                                                        << fadingNotchFilterApply(&fadingNotch_c, chirp_freq_cpp, input_c) << std::endl;   // 22
+        ofs  << std::setprecision(9) << std::scientific << time << ", "                                                            //  0
+                                                        << chirp_exc_cpp << ", "                                                   //  1
+                                                        << chirp_freq_cpp << ", "                                                  //  2
+                                                        << chirp_sinarg_cpp << ", "                                                //  3
+                                                        << chirp_exc_c << ", "                                                     //  4
+                                                        << chirp_freq_c << ", "                                                    //  5
+                                                        << chirp_sinarg_c << ", "                                                  //  6
+                                                        << notch_cpp.apply(input_cpp) << ", "                                      //  7
+                                                        << iirFilterApply(&notch_c, input_c) << ", "                               //  8
+                                                        << lowPass2_cpp.apply(input_cpp) << ", "                                   //  9
+                                                        << iirFilterApply(&lowPass2_c, input_c) << ", "                            // 10
+                                                        << lowPass1_cpp.apply(input_cpp) << ", "                                   // 11
+                                                        << iirFilterApply(&lowPass1_c, input_c) << ", "                            // 12
+                                                        << leadLag1_cpp.apply(input_cpp) << ", "                                   // 13
+                                                        << iirFilterApply(&leadLag1_c, input_c) << ", "                            // 14
+                                                        << phaseComp_cpp.apply(input_cpp) << ", "                                  // 15
+                                                        << iirFilterApply(&phaseComp_c, input_c) << ", "                           // 16
+                                                        << leadLag2_cpp.apply(input_cpp) << ", "                                   // 17
+                                                        << iirFilterApply(&leadLag2_c, input_c) << ", "                            // 18
+                                                        << input_cpp << ", "                                                       // 19
+                                                        << input_c << ", "                                                         // 20
+                                                        << fadingNotch_cpp.apply(chirp_freq_cpp, input_cpp) << ", "                // 21
+                                                        << fadingNotchFilterApply(&fadingNotch_c, chirp_freq_cpp, input_c) << ", " // 22
+                                                        << integrator_cpp.apply(input_cpp) << ", "                                 // 23
+                                                        << iirFilterApply(&integrator_c, input_c) << ", "                          // 24
+                                                        << differentiator_cpp.apply(input_cpp) << ", "                             // 25
+                                                        << iirFilterApply(&differentiator_c, input_c) << ", "                      // 26
+                                                        << differentiatingLowPass1_cpp.apply(input_cpp) << ", "                    // 27
+                                                        << iirFilterApply(&differentiatingLowPass1_c, input_c) << std::endl;       // 28
 
     }
 

@@ -2,14 +2,6 @@ clc, clear variables
 addpath iirfilter\
 %%
 
-% notch:
-% lowPass2:
-% lowPass1:
-% leadLag1:
-% leadComp1:
-% leadLag2:
-% fadingNotch
-
 data_raw = readmatrix("../../output/data.txt");
 
 data.time = data_raw(:,1);
@@ -17,17 +9,20 @@ data.values = data_raw(:,2:end);
 
 Ts = floor(mean(diff(data.time)) * 1.0e6) * 1.0e-6
 
-ind_exc    = [ 1,  4];
-ind_fchirp = [ 2,  5];
-ind_sinarg = [ 3,  6];
-ind_notch  = [ 7,  8];
-ind_lp2    = [ 9, 10];
-ind_lp1    = [11, 12];
-ind_ll1    = [13, 14];
-ind_pc1    = [15, 16];
-ind_ll2    = [17, 18];
-ind_inp    = [19, 20];
-ind_fnotch = [21, 22];
+ind_exc     = [ 1,  4];
+ind_fchirp  = [ 2,  5];
+ind_sinarg  = [ 3,  6];
+ind_notch   = [ 7,  8];
+ind_lp2     = [ 9, 10];
+ind_lp1     = [11, 12];
+ind_ll1     = [13, 14];
+ind_pc1     = [15, 16];
+ind_ll2     = [17, 18];
+ind_inp     = [19, 20];
+ind_fnotch  = [21, 22];
+ind_int     = [23, 24];
+ind_diff    = [25, 26];
+ind_difflp1 = [27, 28];
 
 figure(1)
 subplot(311)
@@ -62,6 +57,7 @@ s = tf('s');
 
 % #define NOTCH_F_CUT 1.0e3f
 % #define NOTCH_D 0.1f
+
 fn = 1.0e3;
 Dn = 0.1;
 signal = "notch";
@@ -91,6 +87,7 @@ set(gca, 'YScale', 'linear')
 
 % #define LOWPASS2_F_CUT 60.0f
 % #define LOWPASS2_D (sqrtf(3.0f) / 2.0f)
+
 flp2 = 60.0;
 Dlp2 = sqrt(3.0) / 2.0;
 signal = "lp2";
@@ -118,6 +115,7 @@ set(gca, 'YScale', 'linear')
 %%
 
 % #define LOWPASS1_F_CUT 60.0f
+
 flp1 = 60.0;
 signal = "lp1";
 
@@ -145,6 +143,7 @@ set(gca, 'YScale', 'linear')
 
 % #define LEADLAG1_F_ZERO 60.0f
 % #define LEADLAG1_F_POLE 200.0f
+
 fz1 = 60.0;
 fp1 = 200.0;
 signal = "ll1";
@@ -174,6 +173,7 @@ set(gca, 'YScale', 'linear')
 
 % #define PHASECOMP1_F_CENTER 80.0f
 % #define PHASECOMP1_PHASE_LIFT -45.0f
+
 fc1 = 80.0;
 phal1 = -45.0;
 signal = "pc1";
@@ -206,6 +206,7 @@ set(gca, 'YScale', 'linear')
 % #define LEADLAG2_D_ZERO 0.08f
 % #define LEADLAG2_F_POLE 1000.0f
 % #define LEADLAG2_D_POLE 0.12f
+
 fzll2 = 20.0;
 Dzll2 = 0.08;
 fpll2 = 1000.0;
@@ -235,11 +236,88 @@ set(gca, 'YScale', 'linear')
 
 %%
 
+% integrator
+
+signal = "int";
+
+figure(14)
+plot(data.time, data.values(:, ind_int)), grid on, title(signal)
+
+inp = data.values(:,ind_inp(1));
+out = data.values(:,ind_int(1));
+[Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
+
+Gc = 1 / s;
+
+figure(15)
+subplot(211)
+bode(Gest, get_integrator(Ts), Gc, 2*pi*Gest.Frequency(Gest.Frequency < 1/2/Ts)), grid on
+title(signal)
+subplot(212)
+bodemag(Cest, 2*pi*Cest.Frequency(Cest.Frequency < 1/2/Ts), opt), grid on
+title('')
+set(gca, 'YScale', 'linear')
+
+
+%%
+
+% differentiator
+
+signal = "diff";
+
+figure(16)
+plot(data.time, data.values(:, ind_diff)), grid on, title(signal)
+
+inp = data.values(:,ind_inp(1));
+out = data.values(:,ind_diff(1));
+[Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
+
+Gc = s;
+
+figure(17)
+subplot(211)
+bode(Gest, get_differentiator(Ts), Gc, 2*pi*Gest.Frequency(Gest.Frequency < 1/2/Ts)), grid on
+title(signal)
+subplot(212)
+bodemag(Cest, 2*pi*Cest.Frequency(Cest.Frequency < 1/2/Ts), opt), grid on
+title('')
+set(gca, 'YScale', 'linear')
+
+
+%%
+
+% #define DIFF_LOWPASS1_F_CUT 120.0f
+
+fdlp1 = 120.0;
+signal = "difflp1";
+
+figure(18)
+plot(data.time, data.values(:, ind_difflp1)), grid on, title(signal)
+
+inp = data.values(:,ind_inp(1));
+out = data.values(:,ind_difflp1(1));
+[Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
+
+wdlp1 = 2*pi*fdlp1;
+Gc = wdlp1*s / (s + wdlp1);
+
+figure(19)
+subplot(211)
+bode(Gest, get_differentiating_lowpass1(fdlp1, Ts), Gc, 2*pi*Gest.Frequency(Gest.Frequency < 1/2/Ts)), grid on
+title(signal)
+subplot(212)
+bodemag(Cest, 2*pi*Cest.Frequency(Cest.Frequency < 1/2/Ts), opt), grid on
+title('')
+set(gca, 'YScale', 'linear')
+
+
+%%
+
 % fading notch
 
 signal = "fnotch";
 
-figure(14)
+figure(20)
 subplot(221)
 plot(data.time, data.values(:, [ind_inp(1), ind_fnotch(1)])), grid on, title(signal)
 subplot(222)

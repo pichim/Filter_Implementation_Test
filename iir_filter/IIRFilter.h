@@ -1,18 +1,21 @@
 #pragma once
 
-#include <math.h>
-
-#ifndef M_PIf
-    #define M_PIf 3.14159265358979323846f /* pi */
-#endif
-
 class IIRFilter {
 public:
     IIRFilter() {};
     virtual ~IIRFilter() = default;
 
+    void integratorInit(const float Ts);
+    void integratorUpdate(const float Ts);
+
+    void differentiatorInit(const float Ts);
+    void differentiatorUpdate(const float Ts);
+
     void lowPass1Init(const float fcut, const float Ts);
     void lowPass1Update(const float fcut, const float Ts);
+
+    void differentiatingLowPass1Init(const float fcut, const float Ts);
+    void differentiatingLowPass1Update(const float fcut, const float Ts);
 
     void leadLag1Init(const float fZero, const float fPole, const float Ts);
     void leadLag1Update(const float fZero, const float fPole, const float Ts);

@@ -1,5 +1,51 @@
 #include "iirfilter.h"
 
+#include <math.h>
+
+#ifndef M_PIf
+    #define M_PIf 3.14159265358979323846f /* pi */
+#endif
+
+// Integrator
+// Time continous prototype: G(s) = 1 / s
+// Disrectization method: Euler
+
+void integratorInit(IIRFilter_t* filter, const float Ts)
+{
+    filter->order = 1;
+    integratorUpdate(filter, Ts);
+    iirFilterReset(filter, 0.0f);
+}
+
+void integratorUpdate(IIRFilter_t* filter, const float Ts)
+{
+    filter->B[0] = Ts;
+    filter->B[1] = 0.0f;
+    filter->B[2] = 0.0f;
+    filter->A[0] = -1.0f;
+    filter->A[1] = 0.0f;
+}
+
+// Differentiator
+// Time continous prototype: G(s) = s
+// Disrectization method: Euler
+
+void differentiatorInit(IIRFilter_t* filter, const float Ts)
+{
+    filter->order = 1;
+    differentiatorUpdate(filter, Ts);
+    iirFilterReset(filter, 0.0f);
+}
+
+void differentiatorUpdate(IIRFilter_t* filter, const float Ts)
+{
+    filter->B[0] = 1.0f / Ts;
+    filter->B[1] = -1.0f / Ts;
+    filter->B[2] = 0.0f;
+    filter->A[0] = 0.0f;
+    filter->A[1] = 0.0f;
+}
+
 // First Order Lowpass Filter
 // Time continous prototype: G(s) = wcut / (s +  wcut)
 // Disrectization method: ZOH with one additional forward shift, e.g. G(z^-1) = Gzoh(z^-1) * z
@@ -18,6 +64,27 @@ void lowPass1Update(IIRFilter_t* filter, const float fcut, const float Ts)
     filter->B[1] = 0.0f;
     filter->B[2] = 0.0f;
     filter->A[0] = filter->B[0] - 1.0f;
+}
+
+// First Order Differentiator with a Lowpass Filter
+// Time continous prototype: G(s) = wcut / (s +  wcut)
+// Disrectization method: Euler for the differentiator and ZOH with one additional forward shift for the lowpass filter
+
+void differentiatingLowPass1Init(IIRFilter_t* filter, const float fcut, const float Ts)
+{
+    filter->order = 1;
+    differentiatingLowPass1Update(filter, fcut, Ts);
+    iirFilterReset(filter, 0.0f);
+}
+
+void differentiatingLowPass1Update(IIRFilter_t* filter, const float fcut, const float Ts)
+{
+    const float b0 = 1.0f - expf(-Ts * 2.0f * M_PIf * fcut);
+    filter->A[1] = 0.0f;
+    filter->B[0] = b0 / Ts;
+    filter->B[1] = -filter->B[0];
+    filter->B[2] = 0.0f;
+    filter->A[0] = b0 - 1.0f;
 }
 
 // First Order Lead or Lag Filter

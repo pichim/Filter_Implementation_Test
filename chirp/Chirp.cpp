@@ -1,5 +1,11 @@
 #include "Chirp.h"
 
+#include <math.h>
+
+#ifndef M_PIf
+    #define M_PIf 3.14159265358979323846f /* pi */
+#endif
+
 Chirp::Chirp(const float f0, const float f1, const float t1, const float Ts)
 {
     init(f0, f1, t1, Ts);

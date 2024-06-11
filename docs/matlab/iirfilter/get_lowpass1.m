@@ -9,4 +9,3 @@ function G = get_lowpass1(fcut, Ts)
     G = ss(tf(B, A, Ts));
 
 end
-

@@ -1,11 +1,6 @@
 #pragma once
 
-#include <math.h>
 #include <stdint.h>
-
-#ifndef M_PIf
-    #define M_PIf 3.14159265358979323846f /* pi */
-#endif
 
 class Chirp
 {

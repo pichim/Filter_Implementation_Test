@@ -1,7 +1,5 @@
 #pragma once
 
-#include <math.h>
-
 #include "iirfilter.h"
 
 typedef struct FadingNotchFilter_s{

@@ -1,5 +1,5 @@
 clc, clear variables
-addpath iirfilter\
+addpath ../iirfilter/
 %%
 
 Ts = 50e-6;
@@ -22,7 +22,7 @@ fp = fp_s;
 g_awr = 1.6;
 
 z = tf('z', Ts);
-Gd = (1 - z^-1) / Ts * get_lowpass1(fp, Ts);
+Gd = get_differentiating_lowpass1(fp, Ts);
 GpidT1 = Kp + Ki * Ts / (1 - z^-1) + Kd * Gd;
 Glp1 = get_lowpass1(ff, Ts);
 GpidT2 = GpidT1 * Glp1;

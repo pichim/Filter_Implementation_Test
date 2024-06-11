@@ -1,5 +1,11 @@
 #include "chirp.h"
 
+#include <math.h>
+
+#ifndef M_PIf
+    #define M_PIf 3.14159265358979323846f /* pi */
+#endif
+
 // initialize the chirp signal generator
 // f0: start frequency in Hz
 // f1: end frequency in Hz

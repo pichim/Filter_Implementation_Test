@@ -1,5 +1,51 @@
 #include "IIRFilter.h"
 
+#include <math.h>
+
+#ifndef M_PIf
+    #define M_PIf 3.14159265358979323846f /* pi */
+#endif
+
+// Integrator
+// Time continous prototype: G(s) = 1 / s
+// Disrectization method: Euler
+
+void IIRFilter::integratorInit(const float Ts)
+{
+    filter.order = 1;
+    integratorUpdate(Ts);
+    reset(0.0f);
+}
+
+void IIRFilter::integratorUpdate(const float Ts)
+{
+    filter.B[0] = Ts;
+    filter.B[1] = 0.0f;
+    filter.B[2] = 0.0f;
+    filter.A[0] = -1.0f;
+    filter.A[1] = 0.0f;
+}
+
+// Differentiator
+// Time continous prototype: G(s) = s
+// Disrectization method: Euler
+
+void IIRFilter::differentiatorInit(const float Ts)
+{
+    filter.order = 1;
+    differentiatorUpdate(Ts);
+    reset(0.0f);
+}
+
+void IIRFilter::differentiatorUpdate(const float Ts)
+{
+    filter.B[0] = 1.0f / Ts;
+    filter.B[1] = -1.0f / Ts;
+    filter.B[2] = 0.0f;
+    filter.A[0] = 0.0f;
+    filter.A[1] = 0.0f;
+}
+
 // First Order Lowpass Filter
 // Time continous prototype: G(s) = wcut / (s +  wcut)
 // Disrectization method: ZOH with one additional forward shift, e.g. G(z^-1) = Gzoh(z^-1) * z
@@ -18,6 +64,23 @@ void IIRFilter::lowPass1Update(const float fcut, const float Ts)
     filter.B[1] = 0.0f;
     filter.B[2] = 0.0f;
     filter.A[0] = filter.B[0] - 1.0f;
+}
+
+void IIRFilter::differentiatingLowPass1Init(const float fcut, const float Ts)
+{
+    filter.order = 1;
+    differentiatingLowPass1Update(fcut, Ts);
+    reset(0.0f);
+}
+
+void IIRFilter::differentiatingLowPass1Update(const float fcut, const float Ts)
+{
+    const float b0 = 1.0f - expf(-Ts * 2.0f * M_PIf * fcut);
+    filter.A[1] = 0.0f;
+    filter.B[0] = b0 / Ts;
+    filter.B[1] = -filter.B[0];
+    filter.B[2] = 0.0f;
+    filter.A[0] = b0 - 1.0f;
 }
 
 // First Order Lead or Lag Filter
