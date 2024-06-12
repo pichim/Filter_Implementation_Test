@@ -34,6 +34,7 @@ void leadLag2Init(IIRFilter_t* filter, const float fZero, const float DZero, con
 void leadLag2Update(IIRFilter_t* filter, const float fZero, const float DZero, const float fPole, const float DPole, const float Ts);
 
 void iirFilterReset(IIRFilter_t* filter, const float output);
+void iirFilterResetDifferentingFilterToZero(IIRFilter_t* filter, const float output);
 float iirFilterApply(IIRFilter_t* filter, const float input);
 float iirFilterApplyConstrained(IIRFilter_t* filter, const float input, const float yMin, const float yMax);
 

@@ -34,7 +34,7 @@ void differentiatorInit(IIRFilter_t* filter, const float Ts)
 {
     filter->order = 1;
     differentiatorUpdate(filter, Ts);
-    iirFilterReset(filter, 0.0f);
+    iirFilterResetDifferentingFilterToZero(filter, 0.0f);
 }
 
 void differentiatorUpdate(IIRFilter_t* filter, const float Ts)
@@ -74,7 +74,7 @@ void differentiatingLowPass1Init(IIRFilter_t* filter, const float fcut, const fl
 {
     filter->order = 1;
     differentiatingLowPass1Update(filter, fcut, Ts);
-    iirFilterReset(filter, 0.0f);
+    iirFilterResetDifferentingFilterToZero(filter, 0.0f);
 }
 
 void differentiatingLowPass1Update(IIRFilter_t* filter, const float fcut, const float Ts)
@@ -214,6 +214,14 @@ void iirFilterReset(IIRFilter_t* filter, const float output)
     filter->w[0] = output * (1.0f - filter->B[0]);
     if (filter->order == 2)
         filter->w[1] = filter->w[0] + output * (filter->A[0] - filter->B[1]);
+}
+
+// Assuming a constant input, differentiating results in zero output
+// Currently only implemented for first order differentiators
+
+void iirFilterResetDifferentingFilterToZero(IIRFilter_t* filter, const float output)
+{
+    filter->w[0] = output * filter->B[1];
 }
 
 float iirFilterApply(IIRFilter_t* filter, const float input)

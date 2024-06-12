@@ -24,6 +24,7 @@ ind_int     = [23, 24];
 ind_diff    = [25, 26];
 ind_difflp1 = [27, 28];
 
+
 figure(1)
 subplot(311)
 plot(data.time, data.values(:, ind_exc)), grid on, ylabel('exc')

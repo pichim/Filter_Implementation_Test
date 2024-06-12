@@ -86,11 +86,11 @@ int main(int argc, char *argv[])
 
     IIRFilter differentiator_cpp;
     differentiator_cpp.differentiatorInit(TS);
-    differentiator_cpp.reset(CHIRP_OFFSET); // differentiating a constant input results in zero
+    differentiator_cpp.resetDifferentingFilterToZero(CHIRP_OFFSET);
 
     IIRFilter differentiatingLowPass1_cpp;
     differentiatingLowPass1_cpp.differentiatingLowPass1Init(DIFF_LOWPASS1_F_CUT, TS);
-    differentiatingLowPass1_cpp.reset(CHIRP_OFFSET); // differentiating a constant input results in zero
+    differentiatingLowPass1_cpp.resetDifferentingFilterToZero(CHIRP_OFFSET);
 
     chirp_t chirp_c;
     chirpInit(&chirp_c, CHIRP_F0, CHIRP_F1, CHIRP_T1, TS);
@@ -129,11 +129,11 @@ int main(int argc, char *argv[])
 
     IIRFilter_t differentiator_c;
     differentiatorInit(&differentiator_c, TS);
-    iirFilterReset(&differentiator_c, CHIRP_OFFSET); // differentiating a constant input results in zero
+    iirFilterResetDifferentingFilterToZero(&differentiator_c, CHIRP_OFFSET);
 
     IIRFilter_t differentiatingLowPass1_c;
     differentiatingLowPass1Init(&differentiatingLowPass1_c, DIFF_LOWPASS1_F_CUT, TS);
-    iirFilterReset(&differentiatingLowPass1_c, CHIRP_OFFSET); // differentiating a constant input results in zero
+    iirFilterResetDifferentingFilterToZero(&differentiatingLowPass1_c, CHIRP_OFFSET);
 
     std::ofstream ofs ("output/data.txt");
 

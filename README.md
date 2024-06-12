@@ -2,7 +2,6 @@
 
 ## TODO
 
-- Initialization of differentiating filters needs to be fixed
 - Check if frequency response estimation in python is correct and double check MATLAB and Python version
 - Implement PID controller in C and C++
 - Further improve SDFT towards dynamic notch implementation

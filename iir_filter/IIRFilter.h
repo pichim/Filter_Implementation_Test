@@ -32,6 +32,7 @@ public:
     void leadLag2Update(const float fZero, const float DZero, const float fPole, const float DPole, const float Ts);
 
     void reset(const float output);
+    void resetDifferentingFilterToZero(const float output);
     float apply(const float input);
     float applyConstrained(const float input, const float yMin, const float yMax);
 
