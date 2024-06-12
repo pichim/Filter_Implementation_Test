@@ -6,10 +6,12 @@
 #include "Chirp.h"
 #include "IIRFilter.h"
 #include "FadingNotchFilter.h"
+#include "PIDController.h"
 
 #include "chirp.h"
 #include "iirfilter.h"
 #include "fadingnotchfilter.h"
+#include "pidcontroller.h"
 
 #define TS 50.0e-6f
 
@@ -46,6 +48,11 @@
 
 #define DIFF_LOWPASS1_F_CUT 120.0f
 
+#define PID_CONTROLLER_KP 42.5f
+#define PID_CONTROLLER_KI 2.3562e+3f
+#define PID_CONTROLLER_KD 0.1764f
+#define PID_CONTROLLER_FCUT_D 300.0f
+#define PID_CONTROLLER_FCUT_ROLLOFF 500.0f
 
 int main(int argc, char *argv[])
 {
@@ -92,6 +99,9 @@ int main(int argc, char *argv[])
     differentiatingLowPass1_cpp.differentiatingLowPass1Init(DIFF_LOWPASS1_F_CUT, TS);
     differentiatingLowPass1_cpp.resetDifferentingFilterToZero(CHIRP_OFFSET);
 
+    PIDController pidController_cpp;
+    pidController_cpp.pidControllerInit(PID_CONTROLLER_KP, PID_CONTROLLER_KI, PID_CONTROLLER_KD, PID_CONTROLLER_FCUT_D, PID_CONTROLLER_FCUT_ROLLOFF, TS);
+
     chirp_t chirp_c;
     chirpInit(&chirp_c, CHIRP_F0, CHIRP_F1, CHIRP_T1, TS);
 
@@ -134,6 +144,9 @@ int main(int argc, char *argv[])
     IIRFilter_t differentiatingLowPass1_c;
     differentiatingLowPass1Init(&differentiatingLowPass1_c, DIFF_LOWPASS1_F_CUT, TS);
     iirFilterResetDifferentingFilterToZero(&differentiatingLowPass1_c, CHIRP_OFFSET);
+
+    PIDController_t pidController_c;
+    pidControllerInit(&pidController_c, PID_CONTROLLER_KP, PID_CONTROLLER_KI, PID_CONTROLLER_KD, PID_CONTROLLER_FCUT_D, PID_CONTROLLER_FCUT_ROLLOFF, TS);
 
     std::ofstream ofs ("output/data.txt");
 
@@ -202,8 +215,9 @@ int main(int argc, char *argv[])
                                                         << differentiator_cpp.apply(input_cpp) << ", "                             // 25
                                                         << iirFilterApply(&differentiator_c, input_c) << ", "                      // 26
                                                         << differentiatingLowPass1_cpp.apply(input_cpp) << ", "                    // 27
-                                                        << iirFilterApply(&differentiatingLowPass1_c, input_c) << std::endl;       // 28
-
+                                                        << iirFilterApply(&differentiatingLowPass1_c, input_c) << ", "             // 28
+                                                        << pidController_cpp.apply(input_cpp) << ", "                              // 29
+                                                        << pidControllerApply(&pidController_c, input_c) << std::endl;             // 30
     }
 
     ofs.close();

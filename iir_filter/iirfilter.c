@@ -141,12 +141,11 @@ void notchInit(IIRFilter_t* filter, const float fcut, const float D, const float
 
 void notchUpdate(IIRFilter_t* filter, const float fcut, const float D, const float Ts)
 {
-    const float Q = 1.0f / (2.0f * D);
     // prewarp is done implicitly
     const float omega = 2.0f * M_PIf * fcut * Ts;
     const float sn = sinf(omega);
     const float cs = cosf(omega);
-    const float alpha = sn / (2.0f * Q);
+    const float alpha = sn * D;
 
     filter->B[0] = 1.0f / (1.0f + alpha);
     filter->B[1] = -2.0f * cs * filter->B[0];

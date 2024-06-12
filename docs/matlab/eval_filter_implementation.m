@@ -23,6 +23,7 @@ ind_fnotch  = [21, 22];
 ind_int     = [23, 24];
 ind_diff    = [25, 26];
 ind_difflp1 = [27, 28];
+ind_pid     = [29, 30];
 
 
 figure(1)
@@ -36,7 +37,7 @@ xlabel('Time (sec)')
 
 
 % frequency response estimation
-Nest     = round(1.0 / Ts);
+Nest     = round(2.0 / Ts);
 koverlap = 0.9;
 Noverlap = round(koverlap * Nest);
 window   = hann(Nest);
@@ -227,7 +228,7 @@ Gc = (wpll2^2 / wzll2^2) * (s^2 + 2*Dzll2*wzll2*s + wzll2^2) / (s^2 + 2*Dpll2*wp
 
 figure(13)
 subplot(211)
-bode(Gest, get_leadlag2(fzll2, Dzll2, fpll2, Dpll2, Ts), Gc, 2*pi*Gest.Frequency(Gest.Frequency < 1/2/Ts)), grid on
+bode(0*Gest, get_leadlag2(fzll2, Dzll2, fpll2, Dpll2, Ts), 0*Gc, 2*pi*Gest.Frequency(Gest.Frequency < 1/2/Ts)), grid on
 title(signal)
 subplot(212)
 bodemag(Cest, 2*pi*Cest.Frequency(Cest.Frequency < 1/2/Ts), opt), grid on
@@ -244,8 +245,8 @@ signal = "int";
 figure(14)
 plot(data.time, data.values(:, ind_int)), grid on, title(signal)
 
-inp = data.values(:,ind_inp(1));
-out = data.values(:,ind_int(1));
+inp = diff( data.values(:,ind_inp(1)) );
+out = diff( data.values(:,ind_int(1)) );
 [Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
 
 Gc = 1 / s;
@@ -314,11 +315,47 @@ set(gca, 'YScale', 'linear')
 
 %%
 
+% # define PID_CONTROLLER_KP 42.5f
+% # define PID_CONTROLLER_KI 2.3562e+3f
+% # define PID_CONTROLLER_KD 0.1764f
+% # define PID_CONTROLLER_FCUT_D 300.0f
+% # define PID_CONTROLLER_FCUT_ROLLOFF 500.0f
+
+Kp = 42.5;
+Ki = 2.3562e3;
+Kd = 0.1764;
+fcutD = 300.0;
+fcutRollOff = 500.0;
+signal = "pid";
+
+figure(20)
+plot(data.time, data.values(:, ind_pid)), grid on, title(signal)
+
+inp = diff( data.values(:,ind_inp(1)) );
+out = diff( data.values(:,ind_pid(1)) );
+[Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
+
+wcutD = 2*pi*fcutD;
+wcutRollOff = 2*pi*fcutRollOff;
+Gc = (Kp + Ki/s + Kd*wcutD*s / (s + wcutD)) * wcutRollOff / (s + wcutRollOff);
+
+figure(21)
+subplot(211)
+bode(Gest, get_pid_controller(Kp, Ki, Kd, fcutD, fcutRollOff, Ts), Gc, 2*pi*Gest.Frequency(Gest.Frequency < 1/2/Ts)), grid on
+title(signal)
+subplot(212)
+bodemag(Cest, 2*pi*Cest.Frequency(Cest.Frequency < 1/2/Ts), opt), grid on
+title('')
+set(gca, 'YScale', 'linear')
+
+
+%%
+
 % fading notch
 
 signal = "fnotch";
 
-figure(20)
+figure(22)
 subplot(221)
 plot(data.time, data.values(:, [ind_inp(1), ind_fnotch(1)])), grid on, title(signal)
 subplot(222)

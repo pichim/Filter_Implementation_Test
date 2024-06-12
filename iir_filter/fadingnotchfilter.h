@@ -4,7 +4,7 @@
 
 typedef struct FadingNotchFilter_s{
     float D, Ts, fFadeMin, fFadeMax;
-    IIRFilter_t filter;
+    IIRFilter_t notch;
 } FadingNotchFilter_t;
 
 void fadingNotchInit(FadingNotchFilter_t* fadingNotch, const float fcut, const float D, const float fFadeMin, const float fFadeMax, const float Ts);

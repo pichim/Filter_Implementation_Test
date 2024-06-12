@@ -6,27 +6,27 @@ void FadingNotchFilter::fadingNotchInit(const float fcut, const float D, const f
     fadingNotch.fFadeMin = fFadeMin;
     fadingNotch.fFadeMax = fFadeMax;
     fadingNotch.Ts = Ts;
-    fadingNotch.filter.notchInit(fcut, D, Ts);
+    fadingNotch.notch.notchInit(fcut, D, Ts);
 }
 
 void FadingNotchFilter::reset(const float fcut, const float output)
 {
-    fadingNotch.filter.notchUpdate(fcut, fadingNotch.D, fadingNotch.Ts);
-    fadingNotch.filter.reset(output);
+    fadingNotch.notch.notchUpdate(fcut, fadingNotch.D, fadingNotch.Ts);
+    fadingNotch.notch.reset(output);
 }
 
 float FadingNotchFilter::apply(const float fcut, const float input)
 {
-    fadingNotch.filter.notchUpdate(fcut, fadingNotch.D, fadingNotch.Ts);
+    fadingNotch.notch.notchUpdate(fcut, fadingNotch.D, fadingNotch.Ts);
 
-    return applyFading(fcut, input, fadingNotch.filter.apply(input));
+    return applyFading(fcut, input, fadingNotch.notch.apply(input));
 }
 
 float FadingNotchFilter::applyConstrained(const float fcut, const float input, const float yMin, const float yMax)
 {
-    fadingNotch.filter.notchUpdate(fcut, fadingNotch.D, fadingNotch.Ts);
+    fadingNotch.notch.notchUpdate(fcut, fadingNotch.D, fadingNotch.Ts);
 
-    return applyFading(fcut, input, fadingNotch.filter.applyConstrained(input, yMin, yMax));
+    return applyFading(fcut, input, fadingNotch.notch.applyConstrained(input, yMin, yMax));
 }
 
 float FadingNotchFilter::applyFading(const float fcut, const float input, const float output)

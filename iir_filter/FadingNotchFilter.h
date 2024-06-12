@@ -16,7 +16,7 @@ public:
 private:
     struct FadingNotchFilterParams{
         float D, Ts, fFadeMin, fFadeMax;
-        IIRFilter filter;
+        IIRFilter notch;
     } fadingNotch;
 
     float applyFading(const float fcut, const float input, const float output);

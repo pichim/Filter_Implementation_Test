@@ -2,7 +2,6 @@
 
 ## TODO
 
-- Change leadlag2 discretization to bilinear transformation
 - Check if frequency response estimation in python is correct and double check MATLAB and Python version
 - Implement PID controller in C and C++
 - Further improve SDFT towards dynamic notch implementation
