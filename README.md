@@ -23,3 +23,7 @@ Using the filter input and output, the frequency response of the filters is esti
 The fading notch filter is also evaluated.
 
 The evaluation in Python can directly be inspected on GitHub: [docs/python/eval_filter_implementation.ipynb](docs/python/eval_filter_implementation.ipynb)
+
+## Links
+- https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html
+- https://ccrma.stanford.edu/~jos/filters/filters.html

@@ -96,10 +96,15 @@ void IIRFilter::leadLag1Init(const float fZero, const float fPole, const float T
 
 void IIRFilter::leadLag1Update(const float fZero, const float fPole, const float Ts)
 {
-    const float alpha = fZero / fPole;
-    const float fCenter = fPole * sqrtf(alpha);
-    const float phaseLift = asinf( (1.0f - alpha) / (1.0f + alpha) ) * (180.0f / M_PIf);
-    phaseComp1Update(fCenter, phaseLift, Ts);
+    const float wZero = (2.0f / Ts) * tanf(M_PIf * fZero * Ts);
+    const float wPole = (2.0f / Ts) * tanf(M_PIf * fPole * Ts);
+    const float k = 1.0f / (Ts * wPole + 2.0f);
+
+    filter.B[0] = wPole * (Ts*wZero + 2.0f) / wZero * k;
+    filter.B[1] = wPole * (Ts*wZero - 2.0f) / wZero * k;
+    filter.B[2] = 0.0f;
+    filter.A[0] = (Ts * wPole - 2.0f) * k;
+    filter.A[1] = 0.0f;
 }
 
 void IIRFilter::phaseComp1Init(const float fCenter, const float phaseLift, const float Ts)
@@ -111,17 +116,12 @@ void IIRFilter::phaseComp1Init(const float fCenter, const float phaseLift, const
 
 void IIRFilter::phaseComp1Update(const float fCenter, const float phaseLift, const float Ts)
 {
-    const float omega = 2.0f * M_PIf * fCenter * Ts;
-    const float sn = sinf(phaseLift * (M_PIf / 180.0f));
-    const float gain = (1.0f + sn) / (1.0f - sn);
-    const float alpha = (12.0f - omega * omega) / (6.0f * omega * sqrtf(gain)); // approximate prewarping (series expansion)
-    const float k = 1.0f / (1.0f + alpha);
+    const float sn = sin(M_PIf / 180.0f * phaseLift);
+    const float k = sqrtf((1.0f - sn) / (1.0f + sn));
+    const float fZero = fCenter * k;
+    const float fPole = fCenter / k;
 
-    filter.B[0] = (1.0f + alpha * gain) * k;
-    filter.B[1] = (1.0f - alpha * gain) * k;
-    filter.B[2] = 0.0f;
-    filter.A[0] = (1.0f - alpha) * k;
-    filter.A[1] = 0.0f;
+    leadLag1Update(fZero, fPole, Ts);
 }
 
 // Second Order Notch Filter
@@ -141,13 +141,12 @@ void IIRFilter::notchUpdate(const float fcut, const float D, const float Ts)
     const float omega = 2.0f * M_PIf * fcut * Ts;
     const float sn = sinf(omega);
     const float cs = cosf(omega);
-    const float alpha = sn * D;
 
-    filter.B[0] = 1.0f / (1.0f + alpha);
+    filter.B[0] = 1.0f / (1.0f + D * sn);
     filter.B[1] = -2.0f * cs * filter.B[0];
     filter.B[2] = filter.B[0];
-    filter.A[1] = (1.0f - alpha) * filter.B[0];
     filter.A[0] = filter.B[1];
+    filter.A[1] = (1.0f - D * sn) * filter.B[0];
 }
 
 // Second Order Lowpass Filter
@@ -186,22 +185,22 @@ void IIRFilter::leadLag2Init(const float fZero, const float DZero, const float f
 
 void IIRFilter::leadLag2Update(const float fZero, const float DZero, const float fPole, const float DPole, const float Ts)
 {
-    // prewarping
-    const float wZero = (2.0f / Ts) * tanf(M_PIf * fZero * Ts);
-    const float wPole = (2.0f / Ts) * tanf(M_PIf * fPole * Ts);
-
-    const float k0 = wPole * wPole;
-    const float k1 = wZero * wZero;
-    const float k2 = Ts * Ts * k0 * k1;
-    const float k3 = DPole * Ts * wPole * k1;
-    const float k4 = DZero * Ts * k0 * wZero;
-    const float k5 = 1.0f / (k2 + 4.0f * (k1 + k3));
+    // prewarp is done implicitly
+    const float omegaZero = 2.0f * M_PIf * fZero * Ts;
+    const float snZero = sinf(omegaZero);
+    const float csZero = cosf(omegaZero);
+    const float omegaPole = 2.0f * M_PIf * fPole * Ts;
+    const float snPole = sinf(omegaPole);
+    const float csPole = cosf(omegaPole);
+    const float k0 = 1.0f / (1.0f + DPole * snPole);
+    const float k1 = k0 * (csPole - 1.0f) / (csZero - 1.0f);
                 
-    filter.B[0] = (k2 + 4.0f * (k4 + k0)) * k5;
-    filter.B[1] = 2.0f * (k2 - 4.0f * k0) * k5;
-    filter.B[2] = (k2 + 4.0f * (k0 - k4)) * k5;
-    filter.A[1] = (k2 + 4.0f * (k1 - k3)) * k5;
-    filter.A[0] = filter.B[0] + filter.B[1] + filter.B[2] - 1.0f - filter.A[1];
+    filter.B[0] = (1.0f + DZero * snZero) * k1;
+    filter.B[1] = -2.0f * csZero * k1;
+    filter.B[2] = (1.0f - DZero * snZero) * k1;
+    filter.A[0] = -2.0f * csPole * k0;
+    filter.A[1] = (1.0f - DPole * snPole) * k0;
+    // filter.A[1] = filter.B[0] + filter.B[1] + filter.B[2] - 1.0f - filter.A[0];
 }
 
 void IIRFilter::reset(const float output)
