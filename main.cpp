@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
     differentiatingLowPass1_cpp.resetDifferentingFilterToZero(CHIRP_OFFSET);
 
     PIDController pidController_cpp;
-    pidController_cpp.pidControllerInit(PID_CONTROLLER_KP, PID_CONTROLLER_KI, PID_CONTROLLER_KD, PID_CONTROLLER_FCUT_D, PID_CONTROLLER_FCUT_ROLLOFF, TS);
+    pidController_cpp.pidt2ControllerInit(PID_CONTROLLER_KP, PID_CONTROLLER_KI, PID_CONTROLLER_KD, PID_CONTROLLER_FCUT_D, PID_CONTROLLER_FCUT_ROLLOFF, TS);
     pidController_cpp.reset(0.0f); // we apply derivative of chirp
 
     chirp_t chirp_c;
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
     iirFilterResetDifferentingFilterToZero(&differentiatingLowPass1_c, CHIRP_OFFSET);
 
     PIDController_t pidController_c;
-    pidControllerInit(&pidController_c, PID_CONTROLLER_KP, PID_CONTROLLER_KI, PID_CONTROLLER_KD, PID_CONTROLLER_FCUT_D, PID_CONTROLLER_FCUT_ROLLOFF, TS);
+    pidt2ControllerInit(&pidController_c, PID_CONTROLLER_KP, PID_CONTROLLER_KI, PID_CONTROLLER_KD, PID_CONTROLLER_FCUT_D, PID_CONTROLLER_FCUT_ROLLOFF, TS);
     pidControllerReset(&pidController_c, 0.0f); // we apply derivative of chirp
 
     std::ofstream ofs ("output/data.txt");

@@ -1,14 +1,31 @@
 #include "PIDController.h"
 
-void PIDController::pidControllerInit(const float Kp, const float Ki, const float Kd, const float fcutD, const float fcutRollOff, const float Ts)
+void PIDController::pidt2ControllerInit(const float Kp, const float Ki, const float Kd, const float fcutD, const float fcutRollOff, const float Ts)
 {
     pidController.Kp = Kp;
     pidController.Ki = Ki;
     pidController.Kd = Kd;
+    pidController.fcutD = fcutD;
+    pidController.fcutRollOff = fcutRollOff;
     pidController.Ts = Ts;
     pidController.differentiatingLowPass1.differentiatingLowPass1Init(fcutD, Ts);
     pidController.lowPass1.lowPass1Init(fcutRollOff, Ts);
     pidController.uiPrevious = 0.0f;
+}
+
+void PIDController::piControllerInit(const float Kp, const float Ki, const float Ts)
+{
+    pidt2ControllerInit(Kp, Ki, 0.0f, 0.0f, 0.0f, Ts);
+}
+
+void PIDController::pdt1ControllerInit(const float Kp, const float Kd, const float fcutD, const float Ts)
+{
+    pidt2ControllerInit(Kp, 0.0f, Kd, fcutD, 0.0f, Ts);
+}
+
+void PIDController::pdt2ControllerInit(const float Kp, const float Kd, const float fcutD, const float fcutRollOff, const float Ts)
+{
+    pidt2ControllerInit(Kp, 0.0f, Kd, fcutD, fcutRollOff, Ts);
 }
 
 // It is assumed that the error is zero and all signals are in steady state when this function is called,
@@ -42,7 +59,10 @@ float PIDController::apply(const float error)
         ud = pidController.Kd * pidController.differentiatingLowPass1.apply(error);
 
     // apply roll off filter
-    return pidController.lowPass1.apply(up + ui + ud);
+    if (pidController.fcutRollOff > 0.0f)
+        return pidController.lowPass1.apply(up + ui + ud);
+    else
+        return up + ui + ud;
 }
 
 float PIDController::applyConstrained(const float error, const float uMin, const float uMax)
@@ -69,5 +89,12 @@ float PIDController::applyConstrained(const float error, const float uMin, const
         ud = pidController.Kd * pidController.differentiatingLowPass1.apply(error);
 
     // apply constrained roll off filter
-    return pidController.lowPass1.applyConstrained(up + ui + ud, uMin, uMax);
+    if (pidController.fcutRollOff > 0.0f)
+        return pidController.lowPass1.applyConstrained(up + ui + ud, uMin, uMax);
+    else {
+        const float u = up + ui + ud;
+        return (u < uMin) ? uMin
+             : (u > uMax) ? uMax
+             :  u;
+    }
 }
