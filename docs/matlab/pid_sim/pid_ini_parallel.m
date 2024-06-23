@@ -19,8 +19,6 @@ Ki = Ki_s;
 Kd = -(Ki_s*fp_s - Ki_s*fz_s - 2*pi*Kp_s*fp_s^2 + 2*pi*Kp_s*fp_s*fz_s)/(4*fp_s^2*fz_s*pi^2);
 fp = fp_s;
 
-g_awr = 1.6;
-
 z = tf('z', Ts);
 Gd = get_differentiating_lowpass1(fp, Ts);
 GpidT1 = Kp + Ki * Ts / (1 - z^-1) + Kd * Gd;
@@ -62,21 +60,14 @@ bode(T, S), grid on
 
 u_max = 5.5;
 u_min = -u_max;
+g_awr = 1.2;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+% Kp
+% Ki
+% Kd
+fcutD = fp;
+fcutrollOff = ff;
+% Ts
+uMax = u_max;
+uMin = u_min;
 

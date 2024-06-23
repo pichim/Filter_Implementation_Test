@@ -9,7 +9,9 @@ public:
 
     void pidControllerInit(const float Kp, const float Ki, const float Kd, const float fcutD, const float fcutRollOff, const float Ts);
 
-    float apply(const float error); 
+    void reset(const float ui);
+    float apply(const float error);
+    float applyConstrained(const float error, const float uMin, const float uMax);
 
 private:
     struct PIDControllerParams{

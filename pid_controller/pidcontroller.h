@@ -10,5 +10,6 @@ typedef struct PIDController_s{
 } PIDController_t;
 
 void pidControllerInit(PIDController_t* pidController, const float Kp, const float Ki, const float Kd, const float fcutD, const float fcutRollOff, const float Ts);
-
-float pidControllerApply(PIDController_t* pidController, const float error); 
+void pidControllerReset(PIDController_t* pidController, const float ui);
+float pidControllerApply(PIDController_t* pidController, const float error);
+float pidControllerApplyConstrained(PIDController_t* pidController, const float error, const float uMin, const float uMax);

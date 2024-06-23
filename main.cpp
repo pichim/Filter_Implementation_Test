@@ -53,6 +53,8 @@
 #define PID_CONTROLLER_KD 0.1764f
 #define PID_CONTROLLER_FCUT_D 300.0f
 #define PID_CONTROLLER_FCUT_ROLLOFF 500.0f
+#define PID_CONTROLLER_U_MIN (-1.0e5f)
+#define PID_CONTROLLER_U_MAX (-PID_CONTROLLER_U_MIN)
 
 int main(int argc, char *argv[])
 {
@@ -89,7 +91,7 @@ int main(int argc, char *argv[])
 
     IIRFilter integrator_cpp;
     integrator_cpp.integratorInit(TS);
-    integrator_cpp.reset(CHIRP_OFFSET);
+    integrator_cpp.reset(0.0f); // we apply derivative of chirp
 
     IIRFilter differentiator_cpp;
     differentiator_cpp.differentiatorInit(TS);
@@ -101,6 +103,7 @@ int main(int argc, char *argv[])
 
     PIDController pidController_cpp;
     pidController_cpp.pidControllerInit(PID_CONTROLLER_KP, PID_CONTROLLER_KI, PID_CONTROLLER_KD, PID_CONTROLLER_FCUT_D, PID_CONTROLLER_FCUT_ROLLOFF, TS);
+    pidController_cpp.reset(0.0f); // we apply derivative of chirp
 
     chirp_t chirp_c;
     chirpInit(&chirp_c, CHIRP_F0, CHIRP_F1, CHIRP_T1, TS);
@@ -135,7 +138,7 @@ int main(int argc, char *argv[])
 
     IIRFilter_t integrator_c;
     integratorInit(&integrator_c, TS);
-    iirFilterReset(&integrator_c, CHIRP_OFFSET);
+    iirFilterReset(&integrator_c, 0.0f); // we apply derivative of chirp
 
     IIRFilter_t differentiator_c;
     differentiatorInit(&differentiator_c, TS);
@@ -147,6 +150,7 @@ int main(int argc, char *argv[])
 
     PIDController_t pidController_c;
     pidControllerInit(&pidController_c, PID_CONTROLLER_KP, PID_CONTROLLER_KI, PID_CONTROLLER_KD, PID_CONTROLLER_FCUT_D, PID_CONTROLLER_FCUT_ROLLOFF, TS);
+    pidControllerReset(&pidController_c, 0.0f); // we apply derivative of chirp
 
     std::ofstream ofs ("output/data.txt");
 
@@ -161,6 +165,10 @@ int main(int argc, char *argv[])
 
     float input_cpp = CHIRP_OFFSET;
     float input_c = CHIRP_OFFSET;
+    float input_cpp_previous = CHIRP_OFFSET;
+    float input_c_previous = CHIRP_OFFSET;
+    float diff_input_cpp = 0.0f;
+    float diff_input_c = 0.0f;
 
     bool chirp_update_finished = false;
 
@@ -179,6 +187,11 @@ int main(int argc, char *argv[])
 
                 input_cpp = CHIRP_AMPLITUDE * chirp_exc_cpp + CHIRP_OFFSET;
                 input_c = CHIRP_AMPLITUDE * chirp_exc_c + CHIRP_OFFSET;
+
+                diff_input_cpp = (input_cpp - input_cpp_previous) / TS;
+                diff_input_c = (input_c - input_c_previous) / TS;
+                input_cpp_previous = input_cpp;
+                input_c_previous = input_c;
             } else {
                 chirp_update_finished = true;
             }
@@ -210,14 +223,18 @@ int main(int argc, char *argv[])
                                                         << input_c << ", "                                                         // 20
                                                         << fadingNotch_cpp.apply(chirp_freq_cpp, input_cpp) << ", "                // 21
                                                         << fadingNotchFilterApply(&fadingNotch_c, chirp_freq_cpp, input_c) << ", " // 22
-                                                        << integrator_cpp.apply(input_cpp) << ", "                                 // 23
-                                                        << iirFilterApply(&integrator_c, input_c) << ", "                          // 24
+                                                        << integrator_cpp.apply(diff_input_cpp) << ", "                            // 23
+                                                        << iirFilterApply(&integrator_c, diff_input_c) << ", "                     // 24
                                                         << differentiator_cpp.apply(input_cpp) << ", "                             // 25
                                                         << iirFilterApply(&differentiator_c, input_c) << ", "                      // 26
                                                         << differentiatingLowPass1_cpp.apply(input_cpp) << ", "                    // 27
                                                         << iirFilterApply(&differentiatingLowPass1_c, input_c) << ", "             // 28
-                                                        << pidController_cpp.apply(input_cpp) << ", "                              // 29
-                                                        << pidControllerApply(&pidController_c, input_c) << std::endl;             // 30
+                                                        << pidController_cpp.apply(diff_input_cpp) << ", "                         // 29
+                                                        << pidControllerApply(&pidController_c, diff_input_c) <<  ", "             // 30
+             //<< pidController_cpp.applyConstrained(diff_input_cpp, PID_CONTROLLER_U_MIN, PID_CONTROLLER_U_MAX) << ", "             // 29
+             //<< pidControllerApplyConstrained(&pidController_c, diff_input_c, PID_CONTROLLER_U_MIN, PID_CONTROLLER_U_MAX) <<  ", " // 30
+                                                        << diff_input_cpp << ", "                                                  // 31
+                                                        << diff_input_c << std::endl;                                              // 32
     }
 
     ofs.close();

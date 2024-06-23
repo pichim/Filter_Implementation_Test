@@ -24,6 +24,7 @@ ind_int     = [23, 24];
 ind_diff    = [25, 26];
 ind_difflp1 = [27, 28];
 ind_pid     = [29, 30];
+ind_diffinp = [31, 32];
 
 
 figure(1)
@@ -245,8 +246,8 @@ signal = "int";
 figure(14)
 plot(data.time, data.values(:, ind_int)), grid on, title(signal)
 
-inp = diff( data.values(:,ind_inp(1)) );
-out = diff( data.values(:,ind_int(1)) );
+inp = data.values(:,ind_diffinp(1));
+out = data.values(:,ind_int(1));
 [Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
 
 Gc = 1 / s;
@@ -331,8 +332,8 @@ signal = "pid";
 figure(20)
 plot(data.time, data.values(:, ind_pid)), grid on, title(signal)
 
-inp = diff( data.values(:,ind_inp(1)) );
-out = diff( data.values(:,ind_pid(1)) );
+inp = data.values(:,ind_diffinp(1));
+out = data.values(:,ind_pid(1));
 [Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
 
 wcutD = 2*pi*fcutD;
