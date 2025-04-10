@@ -8,10 +8,10 @@
 #include "FadingNotchFilter.h"
 #include "PIDController.h"
 
-#include "chirp.h"
-#include "iirfilter.h"
-#include "fadingnotchfilter.h"
-#include "pidcontroller.h"
+#include "chirp_c.h"
+#include "iirfilter_c.h"
+#include "fadingnotchfilter_c.h"
+#include "pidcontroller_c.h"
 
 #define TS 50.0e-6f
 

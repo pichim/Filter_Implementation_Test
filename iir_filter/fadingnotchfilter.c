@@ -1,4 +1,4 @@
-#include "fadingnotchfilter.h"
+#include "fadingnotchfilter_c.h"
 
 void fadingNotchInit(FadingNotchFilter_t* fadingNotch, const float fcut, const float D, const float fFadeMin, const float fFadeMax, const float Ts)
 {

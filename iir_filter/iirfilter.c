@@ -1,4 +1,4 @@
-#include "iirfilter.h"
+#include "iirfilter_c.h"
 
 #include <math.h>
 

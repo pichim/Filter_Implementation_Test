@@ -39,4 +39,4 @@ float FadingNotchFilter::applyFading(const float fcut, const float input, const 
         const float w = (fcut - fadingNotch.fFadeMin) / (fadingNotch.fFadeMax - fadingNotch.fFadeMin);
         return (1.0f - w) * input + w * output;
     }
-}       
+}

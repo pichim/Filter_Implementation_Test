@@ -1,6 +1,6 @@
 #pragma once
 
-#include "iirfilter.h"
+#include "iirfilter_c.h"
 
 typedef struct PIDController_s{
     float Kp, Ki, Kd, fcutD, fcutRollOff, Ts;

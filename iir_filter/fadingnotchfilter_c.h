@@ -1,6 +1,6 @@
 #pragma once
 
-#include "iirfilter.h"
+#include "iirfilter_c.h"
 
 typedef struct FadingNotchFilter_s{
     float D, Ts, fFadeMin, fFadeMax;

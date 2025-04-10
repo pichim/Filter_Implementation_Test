@@ -1,4 +1,4 @@
-#include "pidcontroller.h"
+#include "pidcontroller_c.h"
 
 void pidt2ControllerInit(PIDController_t* pidController, const float Kp, const float Ki, const float Kd, const float fcutD, const float fcutRollOff, const float Ts)
 {

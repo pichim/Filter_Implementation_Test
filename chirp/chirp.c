@@ -1,4 +1,4 @@
-#include "chirp.h"
+#include "chirp_c.h"
 
 #include <math.h>
 
