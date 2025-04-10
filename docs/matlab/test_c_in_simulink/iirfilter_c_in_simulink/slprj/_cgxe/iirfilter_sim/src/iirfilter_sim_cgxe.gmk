@@ -1,0 +1,74 @@
+#--------------------------- Tool Specifications -------------------------
+#
+# Modify the following macros to reflect the tools you wish to use for
+# compiling and linking your code.
+#
+CC = "C:\Program Files\MATLAB\R2024a\bin\win64\mex.exe" -R2018a
+LD = $(CC)
+ 
+MODEL     = iirfilter_sim
+TARGET      = cgxe
+MODULE_SRCS   = m_pEClYI3NgNTuTdGHmGitdG.c
+MODEL_SRC  = iirfilter_sim_cgxe.c
+MODEL_REG = iirfilter_sim_cgxe_registry.c
+MAKEFILE    = iirfilter_sim_cgxe.gmk
+MATLAB_ROOT  = c:\program files\matlab\r2024a\toolbox\stateflow\stateflow\..\..\..
+BUILDARGS   = 
+#------------------------------ Include/Lib Path ------------------------------
+ 
+USER_INCLUDES = -I"D:\Dropbox\pmic\git_repositories\filter_implementation_test\docs\matlab\test_c_in_simulink\iirfilter_c_in_simulink\slprj\_cgxe\iirfilter_sim\src" -I"D:\Dropbox\pmic\git_repositories\filter_implementation_test\docs\matlab\test_c_in_simulink\iirfilter_c_in_simulink" -I"D:\Dropbox\pmic\git_repositories\filter_implementation_test\iir_filter" -I"D:\Dropbox\pmic\GIT_repositories\Filter_Implementation_Test\docs\matlab\test_c_in_simulink\iirfilter_c_in_simulink\slprj\_cprj" 
+AUX_INCLUDES = 
+MLSLSF_INCLUDES  = \
+    -I"C:\Program Files\MATLAB\R2024a\extern\include" \
+    -I"C:\Program Files\MATLAB\R2024a\simulink\include" \
+    -I"C:\Program Files\MATLAB\R2024a\rtw\c\src" 
+
+THIRD_PARTY_INCLUDES = -I"D:\Dropbox\pmic\GIT_repositories\Filter_Implementation_Test\docs\matlab\test_c_in_simulink\iirfilter_c_in_simulink\slprj\_cgxe\iirfilter_sim\src" -I"D:\Dropbox\pmic\GIT_repositories\Filter_Implementation_Test\docs\matlab\test_c_in_simulink\iirfilter_c_in_simulink" -I"D:\Dropbox\pmic\GIT_repositories\Filter_Implementation_Test\docs\matlab\test_c_in_simulink\iirfilter_c_in_simulink\slprj\_slcc\usV23h6UlpYViYoInLiPJG" 
+
+INCLUDE_PATH = $(USER_INCLUDES) $(AUX_INCLUDES) $(MLSLSF_INCLUDES) $(COMPILER_INCLUDES) $(THIRD_PARTY_INCLUDES)
+ 
+#----------------- Compiler and Linker Options --------------------------------
+ 
+# Optimization Options
+ 
+CC_OPTS =  -w   
+CPP_REQ_DEFINES = -DMATLAB_MEX_FILE
+ 
+# Uncomment this line to move warning level to W4
+# cflags = $(cflags:W3=W4)
+CFLAGS = $(CPP_REQ_DEFINES) $(INCLUDE_PATH) CFLAGS="$$CFLAGS $(CC_OPTS)"
+ 
+LDFLAGS =  
+ 
+AUXLDFLAGS = 
+#----------------------------- Source Files -----------------------------------
+ 
+THIRD_PARTY_SRCS =   
+REQ_SRCS  = $(MODEL_SRC) $(MODEL_REG) $(MODULE_SRCS) $(THIRD_PARTY_SRCS) 
+
+USER_OBJS =
+
+AUX_ABS_OBJS =
+
+REQ_OBJS = $(REQ_SRCS:.cpp=.obj)
+REQ_OBJS2 = $(REQ_OBJS:.c=.obj)
+OBJS = $(REQ_OBJS2) $(USER_OBJS) $(AUX_ABS_OBJS) $(THIRD_PARTY_OBJS)
+OBJLIST_FILE = iirfilter_sim_cgxe.mol
+SFCLIB = 
+AUX_LNK_OBJS = 
+USER_LIBS = 
+PARLIB = 
+ 
+#--------------------------------- Rules --------------------------------------
+ 
+MEX_FILE_NAME = $(MODEL)_$(TARGET).mexw64
+ 
+ $(MEX_FILE_NAME): $(MAKEFILE) $(OBJS) $(SFCLIB) $(AUX_LNK_OBJS)
+	@echo ### Linking ...
+	$(LD) -silent LD="$$MINGWROOT\bin\g++" LDFLAGS="$$LDFLAGS $(LDFLAGS) $(AUXLDFLAGS)" -output $(MEX_FILE_NAME) @$(OBJLIST_FILE) $(USER_LIBS) $(SFCLIB) $(PARLIB) $(IPPLIB) $(THIRD_PARTY_LIBS) 
+%.obj :    %.c
+	$(CC) -c $(CFLAGS) $<
+
+%.obj :    %.cpp
+	$(CC) -c $(CFLAGS) $<
+

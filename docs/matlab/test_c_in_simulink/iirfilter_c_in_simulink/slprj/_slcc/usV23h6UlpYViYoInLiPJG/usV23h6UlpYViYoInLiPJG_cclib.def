@@ -1,0 +1,26 @@
+EXPORTS
+    differentiatingLowPass1Init_usV23h6UlpYViYoInLiPJG @1
+    differentiatingLowPass1Update_usV23h6UlpYViYoInLiPJG @2
+    differentiatorInit_usV23h6UlpYViYoInLiPJG @3
+    differentiatorUpdate_usV23h6UlpYViYoInLiPJG @4
+    get_checksum_source_info @5
+    get_dll_checksum_usV23h6UlpYViYoInLiPJG @6
+    iirFilterApplyConstrained_usV23h6UlpYViYoInLiPJG @7
+    iirFilterApplyFilterUpdate_usV23h6UlpYViYoInLiPJG @8
+    iirFilterApply_usV23h6UlpYViYoInLiPJG @9
+    iirFilterResetDifferentingFilterToZero_usV23h6UlpYViYoInLiPJG @10
+    iirFilterReset_usV23h6UlpYViYoInLiPJG @11
+    integratorInit_usV23h6UlpYViYoInLiPJG @12
+    integratorUpdate_usV23h6UlpYViYoInLiPJG @13
+    leadLag1Init_usV23h6UlpYViYoInLiPJG @14
+    leadLag1Update_usV23h6UlpYViYoInLiPJG @15
+    leadLag2Init_usV23h6UlpYViYoInLiPJG @16
+    leadLag2Update_usV23h6UlpYViYoInLiPJG @17
+    lowPass1Init_usV23h6UlpYViYoInLiPJG @18
+    lowPass1Update_usV23h6UlpYViYoInLiPJG @19
+    lowPass2Init_usV23h6UlpYViYoInLiPJG @20
+    lowPass2Update_usV23h6UlpYViYoInLiPJG @21
+    notchInit_usV23h6UlpYViYoInLiPJG @22
+    notchUpdate_usV23h6UlpYViYoInLiPJG @23
+    phaseComp1Init_usV23h6UlpYViYoInLiPJG @24
+    phaseComp1Update_usV23h6UlpYViYoInLiPJG @25

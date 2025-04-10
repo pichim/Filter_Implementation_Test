@@ -57,7 +57,6 @@ notch = notch_init(notch, 0.0, D, Ts);
 fading_notch = get_fading_notch_filter();
 fading_notch = fading_notch_init(fading_notch, 0.0, D, f_fade_min, f_fade_max, Ts);
 
-
 output = zeros(N,1);
 weight = zeros(N,1);
 output_fade = zeros(N,1);
@@ -113,4 +112,3 @@ ylabel('Faded Notch Filtered Signal')
 subplot(212)
 plot(f_chirp, weight), grid on
 ylabel('Weighting'), xlabel('Frequency')
-
