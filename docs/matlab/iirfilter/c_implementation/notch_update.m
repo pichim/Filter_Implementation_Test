@@ -14,4 +14,3 @@ function filter = notch_update(filter, fcut, D, Ts)
     filter.A(1) = filter.B(2);
 
 end
-

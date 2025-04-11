@@ -1,5 +1,6 @@
 clc, clear all
-addpath ..\lib\
+addpath ..\iirfilter\
+addpath ..\iirfilter\c_implementation\
 %%
 
 % Notes:
@@ -22,10 +23,11 @@ time = (0:N_sim-1).' * Ts;
 
 % signal
 out = 10.0 + ...
-     2.0 * sin(2.0*pi *  12.5*time) + ...
-     7.0 * sin(2.0*pi *  50.0*time) + ...
-   0*9.0 * sin(2.0*pi * 600.0*time) + ...
-    10.0 * 1.0/time(end) * time;
+     20.0 * sin(2.0*pi *   3.5*time) + ...
+    0*7.0 * sin(2.0*pi *  50.0*time) + ...
+    0*9.0 * sin(2.0*pi * 600.0*time) + ...
+    30.0 * 1.0/time(end) * time;
+% out = 0 * out;
 
 % add chirp signal
 f0 = 1.0;            % start frequency
@@ -40,28 +42,38 @@ time_chirp = time(ind_chirp);
 out(ind_chirp) = out(ind_chirp) + A * flipud(chirp(time_chirp, f1, time_chirp(end) - t1, f0, 'linear', -90));
 
 % add noise, sqrt(var) * randn
-variance = 100.0;
+variance = 10.0;
 out_n = out + sqrt(variance) * randn(N_sim, 1);
 
-N = 50;        % numbers of sdft samples
+N = 100;       % numbers of sdft samples
 f_min = 150.0; % minimum tracking frequency, hat to fit onto half bin
 f_max = 300.0; % maximum
 % f_max = 1.2 * f1;
-epsilon = 1e-4;
+epsilon = 1e-3;
+fcut = 20.0;
+b0 = 1.0 - exp(-Ts * 2.0 * pi * fcut);
+a0 = b0 - 1.0;
 
 df = 1/(N * Ts);       % SDFT frequency resolution
 freq = (0:N-1).' * df; % frequency
 ind_eval = 1:N/2 + 1;  % we only need to use N/2 data points
 freq = freq(ind_eval);
 
-ind_f_min = ceil((f_min - 0*df/2) / df) + 1;
-ind_f_max = floor((f_max - 0*df/2) / df) + 1;
+ind_f_min = ceil(f_min/df) + 1;
+ind_f_max = floor(f_max/df) + 1;
 f_min = (ind_f_min - 1) * df;
 f_max = (ind_f_max - 1) * df;
 
-T = 1 / (2*pi * 10);
-b0 = Ts / (T + Ts);
-a0 = -T / (T + Ts);
+% create iir filters
+f_init = (f_max - f_min) / 2.0 + f_min;
+f_cut = 10.0;
+lowpass1 = get_iir_filter();
+lowpass1 = lowpass1_init(lowpass1, f_cut, Ts);
+lowpass1 = iir_filter_reset(lowpass1, f_init);
+lowpass1_w = lowpass1;
+Dn = sqrt(3)/2;
+notch_w = get_iir_filter();
+notch_w = notch_init(notch_w, f_init, Dn, Ts);
 
 fprintf('   --- SDFT Eval Script ---\n');
 fprintf('    Sampling Time %24.2f musec\n', 1e6 * Ts);
@@ -75,7 +87,6 @@ fprintf('    SDFT Max. Frequency %17.2f Hz\n', df);
 
 %%
 
-% place holder for spectrogram
 X_spg_eval   = zeros(N_sim-N+1, N/2 + 1);
 X_w_spg_eval = zeros(N_sim-N+1, N/2 + 1);
 
@@ -88,28 +99,46 @@ f_w_peak_past = (f_max - f_min) / 2.0 + f_min;
 f_peak_eval_f   = zeros(N_sim-N+1, 1);
 f_w_peak_eval_f = zeros(N_sim-N+1, 1);
 
-f_peak_past_f_past   = f_peak_past;
-f_w_peak_past_f_past = f_w_peak_past;
+X_abs_avg_eval   = zeros(N/2 + 1, 1);
+X_w_abs_avg_eval = zeros(N/2 + 1, 1);
 
 P_avg_eval   = zeros(N/2 + 1, 1);
 P_w_avg_eval = zeros(N/2 + 1, 1);
 
+P_f_eval   = zeros(N/2 + 1, 1);
+P_w_f_eval = zeros(N/2 + 1, 1);
+
 cntr = 1;
 for i = 1:N_sim
+
     [X, X_w, is_valid] = sdft_apply(out_n(i), N, epsilon);
+
     if (is_valid) % N_data-N+1 times valid, we have to fill the buffer first
 
         % spectrogram
         X_spg_eval(cntr,:)   = X.';
         X_w_spg_eval(cntr,:) = X_w.';
 
-        % psd
-        P_avg_eval   = P_avg_eval   + X .* conj(X) * 2;
-        P_w_avg_eval = P_w_avg_eval + X_w .* conj(X_w) * 2;
+        % spectras averaged
+        X_abs_avg_eval   = X_abs_avg_eval   + abs(X);
+        X_w_abs_avg_eval = X_w_abs_avg_eval + abs(X_w);
+    
+        % psd averaged
+        P_avg_eval   = P_avg_eval   + real( X .* conj(X) * 2 );
+        P_w_avg_eval = P_w_avg_eval + real(X_w .* conj(X_w) * 2 );
+
+        if (cntr == 1)
+            P_f_eval   = real(X .* conj(X) * 2 );
+            P_w_f_eval = real(X_w .* conj(X_w) * 2 );
+        else
+            P_f_eval   = b0 * real(X .* conj(X) * 2 ) - a0 * P_f_eval;
+            P_w_f_eval = b0 * real(X_w .* conj(X_w) * 2 ) - a0 * P_w_f_eval;
+        end
 
         % evaluate max frequency
         % X_eval = X .* conj(X) * 2;
         X_eval = abs(X);
+        % X_eval = P_f_eval;
         [f_max_eval_candidate, is_peak] = fit_max_freq_parabola(X_eval, N, ind_f_min, ind_f_max, df);
         if (is_peak)
             f_peak_eval(cntr) = f_max_eval_candidate;
@@ -118,12 +147,13 @@ for i = 1:N_sim
         end
         f_peak_past = f_peak_eval(cntr);
 
-        f_peak_eval_f(cntr) = b0 * f_peak_eval(cntr) - a0 * f_peak_past_f_past;
-        f_peak_past_f_past = f_peak_eval_f(cntr);
+        [lowpass1, val_f] = iir_filter_apply(lowpass1, f_peak_eval(cntr));
+        f_peak_eval_f(cntr) = val_f;
 
         % evaluate max frequency for windowed version
         % X_w_eval = X_w .* conj(X_w) * 2;
         X_w_eval = abs(X_w);
+        % X_w_ebal = P_w_f_eval;
         [f_w_max_eval_candidate, is_peak] = fit_max_freq_parabola(X_eval, N, ind_f_min, ind_f_max, df);
         if (is_peak)
             f_w_peak_eval(cntr) = f_w_max_eval_candidate;
@@ -132,18 +162,48 @@ for i = 1:N_sim
         end
         f_w_peak_past = f_w_peak_eval(cntr);
 
-        f_w_peak_eval_f(cntr) = b0 * f_w_peak_eval(cntr) - a0 * f_w_peak_past_f_past;
-        f_w_peak_past_f_past = f_w_peak_eval_f(cntr);
+        [lowpass1_w, val_f] = iir_filter_apply(lowpass1_w, f_w_peak_eval(cntr));
+        f_w_peak_eval_f(cntr) = val_f;
 
         % increment counter
         cntr = cntr + 1;
     end
 end
 
-% normalise psd
+% normalise spectras averaged
+X_abs_avg_eval   = X_abs_avg_eval / cntr;
+X_w_abs_avg_eval = X_w_abs_avg_eval / cntr;
+
+% normalise psd averaged
 P_avg_eval   = P_avg_eval / cntr;
 P_w_avg_eval = P_w_avg_eval / cntr;
 
+%%
+
+X_w_f_spg_eval = zeros(N_sim-N+1, N/2 + 1);
+
+out_f = zeros(N_sim, 1);
+
+clear sdft_apply
+cntr = 1;
+for i = 1:N_sim
+        
+    [notch_w, val_f] = iir_filter_apply(notch_w, out_n(i));
+    
+    [~, X_w_f, is_valid] = sdft_apply(val_f, N, epsilon);
+
+    if (is_valid) % N_data-N+1 times valid, we have to fill the buffer first
+
+        notch_w = notch_update(notch_w, f_w_peak_eval_f(cntr), Dn, Ts);
+        out_f(i) = val_f;
+
+        % spectrogram
+        X_w_f_spg_eval(cntr,:) = X_w_f.';
+
+        % increment counter
+        cntr = cntr + 1;
+    end
+end
 
 %% compare result with direct fft
 
@@ -179,7 +239,7 @@ xlabel('Frequency (Hz)'), ylabel('Imag')
 
 figure(2)
 subplot(311)
-plot(time, [out_n, out]), grid on
+plot(time, [out_n, out, out_f]), grid on
 xlabel('Time (sec)')
 title('FFT vs SDFT windowed')
 subplot(323)
@@ -196,9 +256,8 @@ plot(freq, imag([X_w_fft(ind_eval), X_w])), grid on
 xlabel('Frequency (Hz)'), ylabel('Imag')
 
 figure(3)
-subplot(211)
+subplot(311)
 qmesh = pcolor(time(N:end), freq, abs(X_spg_eval).'); hold on
-% plot(time(N:end), time(N:end) * ((f1 - f0) / t1) + f0, 'k')
 plot(time(N:end), f_peak_eval, 'k')
 plot(time(N:end), f_peak_eval_f, 'm'), hold off
 set(qmesh, 'EdgeColor', 'None');
@@ -206,13 +265,21 @@ title('SDFT vs. Time')
 xlabel('Time (sec)'), ylabel('Frequency (Hz)')
 colormap('jet')
 set(gca, 'ColorScale', 'log')
-subplot(212)
+subplot(312)
 qmesh = pcolor(time(N:end), freq, abs(X_w_spg_eval).'); hold on
-% plot(time(N:end), time(N:end) * ((f1 - f0) / t1) + f0, 'k')
 plot(time(N:end), f_w_peak_eval, 'k')
 plot(time(N:end), f_w_peak_eval_f, 'm'), hold off
 set(qmesh, 'EdgeColor', 'None');
 title('SDFT vs. Time windowed')
+xlabel('Time (sec)'), ylabel('Frequency (Hz)')
+colormap('jet')
+set(gca, 'ColorScale', 'log')
+subplot(313)
+qmesh = pcolor(time(N:end), freq, abs(X_w_f_spg_eval).'); hold on
+plot(time(N:end), f_w_peak_eval, 'k')
+plot(time(N:end), f_w_peak_eval_f, 'm'), hold off
+set(qmesh, 'EdgeColor', 'None');
+title('SDFT vs. Time windowed after Notch')
 xlabel('Time (sec)'), ylabel('Frequency (Hz)')
 colormap('jet')
 set(gca, 'ColorScale', 'log')
@@ -238,15 +305,22 @@ P_welch   = pwelch(out_n, ones(N,1)          , Noverlap, N, 1/Ts, 'power');
 P_w_welch = pwelch(out_n, hann(N, 'periodic'), Noverlap, N, 1/Ts, 'power');
 
 figure(5)
-plot(freq, [P_welch, P_w_welch]), grid on, hold on
+subplot(211)
+plot(freq, [P_avg_eval, P_w_avg_eval]), grid on, hold on
 plot(freq, [P, P_w])
-plot(freq, [P_avg_eval, P_w_avg_eval]), hold off
+plot(freq, [P_welch, P_w_welch]), hold off
 set(gca, 'YScale', 'log')
 xlabel('Frequency (Hz)')
-legend
-
-
-
+legend('P avg eval', 'Pw avgeval', ...
+    'P', 'Pw', ...
+    'P welch', 'Pw welch', ...
+    'location', 'best')
+subplot(212)
+plot(freq, [X_abs_avg_eval, X_w_abs_avg_eval]), grid on
+set(gca, 'YScale', 'log')
+xlabel('Frequency (Hz)')
+legend('X_abs_avg_eval', 'X_w_abs_avg_eval', ...
+    'location', 'best')
 
 
 

@@ -5,4 +5,3 @@ function filter = notch_init(filter, fcut, D, Ts)
     filter = iir_filter_reset(filter, 0.0);
 
 end
-
