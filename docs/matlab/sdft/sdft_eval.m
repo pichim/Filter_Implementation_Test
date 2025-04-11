@@ -11,7 +11,7 @@ addpath ..\iirfilter\c_implementation\
 % - Peak detection works best for abs(X) and not X*conj(X) = abs(X)^2
 
 Ts_fast = 1/5e3;
-N_ds = 4;            % downsampling factor
+N_ds = 3;            % downsampling factor
 Ts = N_ds * Ts_fast; % sampling time
 
 T_sim = 5;                 % simulation time
@@ -23,11 +23,15 @@ time = (0:N_sim-1).' * Ts;
 
 % signal
 out = 10.0 + ...
-     20.0 * sin(2.0*pi *   3.5*time) + ...
+    20.0 * sin(2.0*pi *   3.5*time) + ...
     0*7.0 * sin(2.0*pi *  50.0*time) + ...
     0*9.0 * sin(2.0*pi * 600.0*time) + ...
     30.0 * 1.0/time(end) * time;
 % out = 0 * out;
+
+% add additional sinus
+ind = time >= 2.0 & time <= 3.0;
+out(ind) = out(ind) + 40.0 * sin(2.0*pi * 295.0*time(ind));
 
 % add chirp signal
 f0 = 1.0;            % start frequency
@@ -42,17 +46,13 @@ time_chirp = time(ind_chirp);
 out(ind_chirp) = out(ind_chirp) + A * flipud(chirp(time_chirp, f1, time_chirp(end) - t1, f0, 'linear', -90));
 
 % add noise, sqrt(var) * randn
-variance = 10.0;
+variance = 100.0;
 out_n = out + sqrt(variance) * randn(N_sim, 1);
 
-N = 100;       % numbers of sdft samples
+N = 50;        % numbers of sdft samples
 f_min = 150.0; % minimum tracking frequency, hat to fit onto half bin
-f_max = 300.0; % maximum
-% f_max = 1.2 * f1;
+f_max = 400.0; % maximum
 epsilon = 1e-3;
-fcut = 20.0;
-b0 = 1.0 - exp(-Ts * 2.0 * pi * fcut);
-a0 = b0 - 1.0;
 
 df = 1/(N * Ts);       % SDFT frequency resolution
 freq = (0:N-1).' * df; % frequency
@@ -66,14 +66,15 @@ f_max = (ind_f_max - 1) * df;
 
 % create iir filters
 f_init = (f_max - f_min) / 2.0 + f_min;
-f_cut = 10.0;
+f_cut  = 30.0;
 lowpass1 = get_iir_filter();
 lowpass1 = lowpass1_init(lowpass1, f_cut, Ts);
 lowpass1 = iir_filter_reset(lowpass1, f_init);
 lowpass1_w = lowpass1;
 Dn = sqrt(3)/2;
-notch_w = get_iir_filter();
-notch_w = notch_init(notch_w, f_init, Dn, Ts);
+% create fading_notch_filter
+fading_notch_w = get_fading_notch_filter();
+fading_notch_w = fading_notch_init(fading_notch_w, f_init, Dn, f_min, f_min + 50.0, Ts);
 
 fprintf('   --- SDFT Eval Script ---\n');
 fprintf('    Sampling Time %24.2f musec\n', 1e6 * Ts);
@@ -93,11 +94,11 @@ X_w_spg_eval = zeros(N_sim-N+1, N/2 + 1);
 f_peak_eval   = zeros(N_sim-N+1, 1);
 f_w_peak_eval = zeros(N_sim-N+1, 1);
 
-f_peak_past   = (f_max - f_min) / 2.0 + f_min;
-f_w_peak_past = (f_max - f_min) / 2.0 + f_min;
+f_peak_past   = f_init;
+f_w_peak_past = f_init;
 
-f_peak_eval_f   = zeros(N_sim-N+1, 1);
-f_w_peak_eval_f = zeros(N_sim-N+1, 1);
+f_peak_f_eval   = zeros(N_sim-N+1, 1);
+f_w_peak_f_eval = zeros(N_sim-N+1, 1);
 
 X_abs_avg_eval   = zeros(N/2 + 1, 1);
 X_w_abs_avg_eval = zeros(N/2 + 1, 1);
@@ -105,12 +106,17 @@ X_w_abs_avg_eval = zeros(N/2 + 1, 1);
 P_avg_eval   = zeros(N/2 + 1, 1);
 P_w_avg_eval = zeros(N/2 + 1, 1);
 
-P_f_eval   = zeros(N/2 + 1, 1);
-P_w_f_eval = zeros(N/2 + 1, 1);
+peak_to_noise_ratio_eval   = zeros(N/2 + 1, 1);
+X_peak_eval                = zeros(N/2 + 1, 1);
+X_not_peak_mean_eval       = zeros(N/2 + 1, 1);
+peak_to_noise_ratio_w_eval = zeros(N/2 + 1, 1);
+X_w_peak_eval              = zeros(N/2 + 1, 1);
+X_w_not_peak_mean_eval     = zeros(N/2 + 1, 1);
 
 cntr = 1;
 for i = 1:N_sim
 
+    % update sdft
     [X, X_w, is_valid] = sdft_apply(out_n(i), N, epsilon);
 
     if (is_valid) % N_data-N+1 times valid, we have to fill the buffer first
@@ -124,46 +130,48 @@ for i = 1:N_sim
         X_w_abs_avg_eval = X_w_abs_avg_eval + abs(X_w);
     
         % psd averaged
-        P_avg_eval   = P_avg_eval   + real( X .* conj(X) * 2 );
-        P_w_avg_eval = P_w_avg_eval + real(X_w .* conj(X_w) * 2 );
-
-        if (cntr == 1)
-            P_f_eval   = real(X .* conj(X) * 2 );
-            P_w_f_eval = real(X_w .* conj(X_w) * 2 );
-        else
-            P_f_eval   = b0 * real(X .* conj(X) * 2 ) - a0 * P_f_eval;
-            P_w_f_eval = b0 * real(X_w .* conj(X_w) * 2 ) - a0 * P_w_f_eval;
-        end
+        P_avg_eval   = P_avg_eval   + real(X .* conj(X) * 2);
+        P_w_avg_eval = P_w_avg_eval + real(X_w .* conj(X_w) * 2);
 
         % evaluate max frequency
-        % X_eval = X .* conj(X) * 2;
+        % X_eval = real(X .* conj(X) * 2);
         X_eval = abs(X);
-        % X_eval = P_f_eval;
-        [f_max_eval_candidate, is_peak] = fit_max_freq_parabola(X_eval, N, ind_f_min, ind_f_max, df);
+        [f_peak_candidate, is_peak, ...
+            peak_to_noise_ratio, X_peak, X_not_peak_mean] = ...
+            fit_max_freq_parabola(X_eval, N, ind_f_min, ind_f_max, df);
+        peak_to_noise_ratio_eval(cntr)   = peak_to_noise_ratio;
+        X_peak_eval(cntr)                = X_peak;
+        X_not_peak_mean_eval  (cntr)     = X_not_peak_mean;
         if (is_peak)
-            f_peak_eval(cntr) = f_max_eval_candidate;
+            f_peak_eval(cntr) = f_peak_candidate;
         else
             f_peak_eval(cntr) = f_peak_past;
         end
         f_peak_past = f_peak_eval(cntr);
 
+        % lowpass filter
         [lowpass1, val_f] = iir_filter_apply(lowpass1, f_peak_eval(cntr));
-        f_peak_eval_f(cntr) = val_f;
+        f_peak_f_eval(cntr) = val_f;
 
         % evaluate max frequency for windowed version
-        % X_w_eval = X_w .* conj(X_w) * 2;
+        % X_w_eval = real(X_w .* conj(X_w) * 2);
         X_w_eval = abs(X_w);
-        % X_w_ebal = P_w_f_eval;
-        [f_w_max_eval_candidate, is_peak] = fit_max_freq_parabola(X_eval, N, ind_f_min, ind_f_max, df);
+        [f_peak_candidate, is_peak, ...
+            peak_to_noise_ratio, X_peak, X_not_peak_mean] = ...
+            fit_max_freq_parabola(X_w_eval, N, ind_f_min, ind_f_max, df);
+        peak_to_noise_ratio_w_eval(cntr)   = peak_to_noise_ratio;
+        X_w_peak_eval(cntr)                = X_peak;
+        X_w_not_peak_mean_eval  (cntr)     = X_not_peak_mean;
         if (is_peak)
-            f_w_peak_eval(cntr) = f_w_max_eval_candidate;
+            f_w_peak_eval(cntr) = f_peak_candidate;
         else
             f_w_peak_eval(cntr) = f_w_peak_past;
         end
         f_w_peak_past = f_w_peak_eval(cntr);
 
+        % lowpass filter
         [lowpass1_w, val_f] = iir_filter_apply(lowpass1_w, f_w_peak_eval(cntr));
-        f_w_peak_eval_f(cntr) = val_f;
+        f_w_peak_f_eval(cntr) = val_f;
 
         % increment counter
         cntr = cntr + 1;
@@ -187,14 +195,14 @@ out_f = zeros(N_sim, 1);
 clear sdft_apply
 cntr = 1;
 for i = 1:N_sim
-        
-    [notch_w, val_f] = iir_filter_apply(notch_w, out_n(i));
-    
+           
+    % update sdft
     [~, X_w_f, is_valid] = sdft_apply(val_f, N, epsilon);
 
     if (is_valid) % N_data-N+1 times valid, we have to fill the buffer first
 
-        notch_w = notch_update(notch_w, f_w_peak_eval_f(cntr), Dn, Ts);
+        % update fading notch
+        [fading_notch_w, val_f] = fading_notch_filter_apply(fading_notch_w, f_w_peak_f_eval(cntr), out_n(i));
         out_f(i) = val_f;
 
         % spectrogram
@@ -202,6 +210,9 @@ for i = 1:N_sim
 
         % increment counter
         cntr = cntr + 1;
+    else
+        % update fading notch
+        [fading_notch_w, val_f] = fading_notch_filter_apply(fading_notch_w, f_init, out_n(i));
     end
 end
 
@@ -259,7 +270,7 @@ figure(3)
 subplot(311)
 qmesh = pcolor(time(N:end), freq, abs(X_spg_eval).'); hold on
 plot(time(N:end), f_peak_eval, 'k')
-plot(time(N:end), f_peak_eval_f, 'm'), hold off
+plot(time(N:end), f_peak_f_eval, 'm'), hold off
 set(qmesh, 'EdgeColor', 'None');
 title('SDFT vs. Time')
 xlabel('Time (sec)'), ylabel('Frequency (Hz)')
@@ -268,7 +279,7 @@ set(gca, 'ColorScale', 'log')
 subplot(312)
 qmesh = pcolor(time(N:end), freq, abs(X_w_spg_eval).'); hold on
 plot(time(N:end), f_w_peak_eval, 'k')
-plot(time(N:end), f_w_peak_eval_f, 'm'), hold off
+plot(time(N:end), f_w_peak_f_eval, 'm'), hold off
 set(qmesh, 'EdgeColor', 'None');
 title('SDFT vs. Time windowed')
 xlabel('Time (sec)'), ylabel('Frequency (Hz)')
@@ -277,34 +288,37 @@ set(gca, 'ColorScale', 'log')
 subplot(313)
 qmesh = pcolor(time(N:end), freq, abs(X_w_f_spg_eval).'); hold on
 plot(time(N:end), f_w_peak_eval, 'k')
-plot(time(N:end), f_w_peak_eval_f, 'm'), hold off
+plot(time(N:end), f_w_peak_f_eval, 'm'), hold off
 set(qmesh, 'EdgeColor', 'None');
 title('SDFT vs. Time windowed after Notch')
 xlabel('Time (sec)'), ylabel('Frequency (Hz)')
 colormap('jet')
 set(gca, 'ColorScale', 'log')
 
+figure(5)
+subplot(311)
+plot(time(N:end), [X_not_peak_mean_eval, X_w_not_peak_mean_eval]), grid on
+subplot(312)
+plot(time(N:end), [X_peak_eval, X_w_peak_eval]), grid on
+subplot(313)
+plot(time(N:end), [peak_to_noise_ratio_eval, peak_to_noise_ratio_w_eval]), grid on
 
+return
 %%
-
-% figure(4)
-% plot(freq, [X_avg, X_w_avg]), grid on
-% set(gca, 'YScale', 'log')
-% xlabel('Frequency (Hz)') %, ylabel('Imag')
-% title(sprintf("var = %0.2e, var(X) = %0.2e, var(Xw) = %0.2e", ...
-%     variance, mean(X_avg), mean(X_w_avg) * 2.0 / 3.0))
 
 Noverlap = N - 1;
 
+% welch
 P   = estimate_spectras(out_n, ones(N,1)          , Noverlap, N, Ts);
 P_w = estimate_spectras(out_n, hann(N, 'periodic'), Noverlap, N, Ts);
 P   = P / 2;
 P_w = P_w / 2;
 
+% welch matlab
 P_welch   = pwelch(out_n, ones(N,1)          , Noverlap, N, 1/Ts, 'power');
 P_w_welch = pwelch(out_n, hann(N, 'periodic'), Noverlap, N, 1/Ts, 'power');
 
-figure(5)
+figure(6)
 subplot(211)
 plot(freq, [P_avg_eval, P_w_avg_eval]), grid on, hold on
 plot(freq, [P, P_w])
@@ -321,79 +335,3 @@ set(gca, 'YScale', 'log')
 xlabel('Frequency (Hz)')
 legend('X_abs_avg_eval', 'X_w_abs_avg_eval', ...
     'location', 'best')
-
-
-
-
-return
-%%
-
-clc, clear all
-
-syms x0 x1 x2 y0 y1 y2
-
-M = [x0^2 x0 1; ...
-     x1^2 x1 1; ...
-     x2^2 x2 1]
-
-theta = M^-1 * [y0; y1; y2]
-
-a = simplify( theta(1) )
-% -(x0*y1 - x1*y0 - x0*y2 + x2*y0 + x1*y2 - x2*y1)/((x0 - x1)*(x0 - x2)*(x1 - x2))
-b = simplify( theta(2) )
-% (x0^2*y1 - x1^2*y0 - x0^2*y2 + x2^2*y0 + x1^2*y2 - x2^2*y1)/((x0 - x1)*(x0 - x2)*(x1 - x2))
-c = simplify( theta(3) )
-% -(- y2*x0^2*x1 + y1*x0^2*x2 + y2*x0*x1^2 - y1*x0*x2^2 - y0*x1^2*x2 + y0*x1*x2^2)/((x0 - x1)*(x0 - x2)*(x1 - x2))
-
-x_max = simplify( -b / (2 * a) )
-% (x0^2*y1 - x1^2*y0 - x0^2*y2 + x2^2*y0 + x1^2*y2 - x2^2*y1) / (2*(x0*y1 - x1*y0 - x0*y2 + x2*y0 + x1*y2 - x2*y1))
-
-%%
-
-clc, clear all
-
-squar_fun = @(a, b, c, x) a * x .* x + b * x + c;
-
-a = -1;
-b =  1;
-c =  1;
-
-x = (-1:0.01:1).';
-y = squar_fun(a, b, c, x);
-
-x0 = x(max(find(x <= -0.9)));
-x1 = x(max(find(x <=  0.0)));
-x2 = x(max(find(x <=  0.9)));
-
-y0 = squar_fun(a, b, c, x0);
-y1 = squar_fun(a, b, c, x1);
-y2 = squar_fun(a, b, c, x2);
-
-a_est = -(x0*y1 - x1*y0 - x0*y2 + x2*y0 + x1*y2 - x2*y1)/((x0 - x1)*(x0 - x2)*(x1 - x2))
-b_est = (x0^2*y1 - x1^2*y0 - x0^2*y2 + x2^2*y0 + x1^2*y2 - x2^2*y1)/((x0 - x1)*(x0 - x2)*(x1 - x2))
-c_est = -(- y2*x0^2*x1 + y1*x0^2*x2 + y2*x0*x1^2 - y1*x0*x2^2 - y0*x1^2*x2 + y0*x1*x2^2)/((x0 - x1)*(x0 - x2)*(x1 - x2))
-
-% x_max_est = (x0^2*y1 - x1^2*y0 - x0^2*y2 + x2^2*y0 + x1^2*y2 - x2^2*y1) / (2*(x0*y1 - x1*y0 - x0*y2 + x2*y0 + x1*y2 - x2*y1))
-% x_max_est = (x0^2*(y1 - y2) + x1^2*(y2 - y0) + x2^2*(y0 - y1)) / (2*(x0*(y1 - y2) + x1*(y2 - y0) + x2*(y0 - y1)))
-den1 = x0 * (y1 - y2);
-den2 = x1 * (y2 - y0);
-den3 = x2 * (y0 - y1);
-x_max_est = 0.5 * (x0*den1 + x1*den2 + x2*den3) / (den1 + den2 + den3)
-y_max_est = squar_fun(a, b, c, x_max_est)
-
-figure(99)
-plot(x, y), grid on, hold on
-plot([x0 x1 x2], [y0 y1 y2], 'bo')
-plot(x_max_est, y_max_est, 'rx'), hold off
-
-
-%%
-
-clc, clear all
-
-syms T s z Ts
-G = 1 / (T*s + 1)
-Gd = subs(G, s, (1 - z^-1)/Ts)
-collect(Gd, z)
-% (Ts*z) / ((T + Ts)*z - T)
-% Ts/(T + Ts) / (1 - T/(T + Ts) * z^-1)
