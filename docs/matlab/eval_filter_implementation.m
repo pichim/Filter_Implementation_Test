@@ -1,5 +1,6 @@
 clc, clear variables
 addpath iirfilter\
+addpath lib\
 %%
 
 data_raw = readmatrix("../../output/data.txt");

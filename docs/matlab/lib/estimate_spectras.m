@@ -51,7 +51,7 @@ function [Pavg, freq] = estimate_spectras(inp, window, Noverlap, Nest, Ts)
             inp_act = inp(ind_start:ind_end,i);
     
             % Todo: check if it is usefull to remove mean here
-            % inp_act = inp_act - mean(inp_act);
+            inp_act = inp_act - mean(inp_act);
     
             inp_act = window .* inp_act;
     

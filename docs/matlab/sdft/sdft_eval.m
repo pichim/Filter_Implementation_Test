@@ -1,4 +1,5 @@
 clc, clear all
+addpath ..\lib\
 %%
 
 % Notes:
