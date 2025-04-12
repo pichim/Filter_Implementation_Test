@@ -11,37 +11,46 @@ function [f_peak, is_peak, peak_to_noise_ratio, X_peak, X_not_peak_mean] = ...
         end
     end
 
-    % average X exept for peak and peak neighbor
+    % % average X exept for peak and peak neighbor
+    % X_not_peak_mean = 0.0;
+    % cntr = 0;
+    % % peak is at the lower end
+    % if (ind_peak == ind_min-1)
+    %     for i = ind_min:ind_max
+    %         X_not_peak_mean = X_not_peak_mean + X(i);
+    %     end
+    %     cntr = ind_max - ind_min + 1;
+    % % peak is at the upper end
+    % elseif (ind_peak == ind_max)
+    %     for i = ind_min-1:ind_max-1
+    %         X_not_peak_mean = X_not_peak_mean + X(i);
+    %     end
+    %     cntr = ind_max - ind_min + 1;
+    % % peak is in between
+    % else
+    %     for i = ind_min-1:ind_max
+    %         if (i ~= ind_peak - 1 && i ~= ind_peak && i ~= ind_peak + 1)
+    %             X_not_peak_mean = X_not_peak_mean + X(i);
+    %         end
+    %     end
+    %     cntr = ind_max - ind_min - 1;
+    % end
+    % X_not_peak_mean = X_not_peak_mean / cntr;
+
+    N_eval = ind_max - ind_min + 2;
+    N_smal = N_eval - 4;
+    ind_smallest = find_k_smallest_indices(X(ind_min-1:ind_max), N_eval, N_smal);
     X_not_peak_mean = 0.0;
-    cntr = 0;
-    % peak is at the lower end
-    if (ind_peak == ind_min-1)
-        for i = ind_min:ind_max
-            X_not_peak_mean = X_not_peak_mean + X(i);
-        end
-        cntr = ind_max - ind_min + 1;
-    % peak is at the upper end
-    elseif (ind_peak == ind_max)
-        for i = ind_min-1:ind_max-1
-            X_not_peak_mean = X_not_peak_mean + X(i);
-        end
-        cntr = ind_max - ind_min + 1;
-    % peak is in between
-    else
-        for i = ind_min-1:ind_max
-            if (i ~= ind_peak - 1 && i ~= ind_peak && i ~= ind_peak + 1)
-                X_not_peak_mean = X_not_peak_mean + X(i);
-            end
-        end
-        cntr = ind_max - ind_min - 1;
+    for i = 1:N_smal
+        X_not_peak_mean = X_not_peak_mean + X(ind_smallest(i) + ind_min - 2);
     end
-    X_not_peak_mean = X_not_peak_mean / cntr;
+    X_not_peak_mean = X_not_peak_mean / N_smal;
     
     % decide if peak is big enough relative to noise and therefor should be
     % tracked
     is_peak = true;
     peak_to_noise_ratio = X_peak / X_not_peak_mean;
-    if peak_to_noise_ratio < 6.0 
+    if peak_to_noise_ratio < 8.0 
         is_peak = false;
         f_peak = 0.0; % will not be processed further
         return

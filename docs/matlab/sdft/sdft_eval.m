@@ -46,13 +46,13 @@ time_chirp = time(ind_chirp);
 out(ind_chirp) = out(ind_chirp) + A * flipud(chirp(time_chirp, f1, time_chirp(end) - t1, f0, 'linear', -90));
 
 % add noise, sqrt(var) * randn
-variance = 100.0;
+variance = 10.0;
 out_n = out + sqrt(variance) * randn(N_sim, 1);
 
 N = 50;        % numbers of sdft samples
 f_min = 150.0; % minimum tracking frequency, hat to fit onto half bin
-f_max = 400.0; % maximum
-epsilon = 1e-3;
+f_max = 700.0; % maximum
+epsilon = 1e-4;
 
 df = 1/(N * Ts);       % SDFT frequency resolution
 freq = (0:N-1).' * df; % frequency
@@ -66,11 +66,16 @@ f_max = (ind_f_max - 1) * df;
 
 % create iir filters
 f_init = (f_max - f_min) / 2.0 + f_min;
-f_cut  = 30.0;
-lowpass1 = get_iir_filter();
-lowpass1 = lowpass1_init(lowpass1, f_cut, Ts);
-lowpass1 = iir_filter_reset(lowpass1, f_init);
-lowpass1_w = lowpass1;
+f_cut  = 10.0;
+% lowpass1 = get_iir_filter();
+% lowpass1 = lowpass1_init(lowpass1, f_cut, Ts);
+% lowpass1 = iir_filter_reset(lowpass1, f_init);
+% lowpass1_w = lowpass1;
+
+f_cut = 10.0;
+knl1 = 2.0 * pi * f_cut;
+knl2 = (0.8 * pi / Ts - knl1) / (2 * (f_max - f_min));
+
 Dn = sqrt(3)/2;
 % create fading_notch_filter
 fading_notch_w = get_fading_notch_filter();
@@ -149,8 +154,14 @@ for i = 1:N_sim
         end
         f_peak_past = f_peak_eval(cntr);
 
-        % lowpass filter
-        [lowpass1, val_f] = iir_filter_apply(lowpass1, f_peak_eval(cntr));
+        % % lowpass filter
+        % [lowpass1, val_f] = iir_filter_apply(lowpass1, f_peak_eval(cntr));
+        % f_peak_f_eval(cntr) = val_f;
+        if (cntr == 1)
+            val_f_past = f_peak_eval(cntr);
+        end
+        val_f = nl_lowpass(f_peak_eval(cntr), val_f_past, knl1, knl2, Ts);
+        val_f_past = val_f;
         f_peak_f_eval(cntr) = val_f;
 
         % evaluate max frequency for windowed version
@@ -169,8 +180,14 @@ for i = 1:N_sim
         end
         f_w_peak_past = f_w_peak_eval(cntr);
 
-        % lowpass filter
-        [lowpass1_w, val_f] = iir_filter_apply(lowpass1_w, f_w_peak_eval(cntr));
+        % % lowpass filter
+        % [lowpass1_w, val_f] = iir_filter_apply(lowpass1_w, f_w_peak_eval(cntr));
+        % f_w_peak_f_eval(cntr) = val_f;
+        if (cntr == 1)
+            val_w_f_past = f_w_peak_eval(cntr);
+        end
+        val_f = nl_lowpass(f_w_peak_eval(cntr), val_w_f_past, knl1, knl2, Ts);
+        val_w_f_past = val_f;
         f_w_peak_f_eval(cntr) = val_f;
 
         % increment counter
@@ -298,10 +315,13 @@ set(gca, 'ColorScale', 'log')
 figure(5)
 subplot(311)
 plot(time(N:end), [X_not_peak_mean_eval, X_w_not_peak_mean_eval]), grid on
+xlabel('Time (sec)'), ylabel('Noise Floor')
 subplot(312)
 plot(time(N:end), [X_peak_eval, X_w_peak_eval]), grid on
+xlabel('Time (sec)'), ylabel('Peak')
 subplot(313)
 plot(time(N:end), [peak_to_noise_ratio_eval, peak_to_noise_ratio_w_eval]), grid on
+xlabel('Time (sec)'), ylabel('Peak to Noise Ratio')
 
 return
 %%
