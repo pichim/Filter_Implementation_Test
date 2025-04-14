@@ -1,4 +1,4 @@
-function ind = find_k_smallest_and_sort_indices(x, N, k)
+function [ind, k_smallest_in_x] = find_k_smallest_and_sort_indices(x, N, k)
     % Initialize the result array with the first k elements of x and their indices
     k_smallest_in_x = x(1:k);
     ind = 1:k;
