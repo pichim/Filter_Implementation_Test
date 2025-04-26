@@ -30,8 +30,10 @@ out = 10.0 + ...
 % out = 0 * out;
 
 % add additional sinus
-ind = time >= 2.0 & time <= 3.0;
-out(ind) = out(ind) + 20.0 * sin(2.0*pi * 295.0*time(ind));
+ind = time >= 2.0;% & time <= 3.0;
+out(ind) = out(ind) + ...
+    20.0 * sin(2.0*pi * 291.0*time(ind)) + ...
+    10.0 * sin(2.0*pi * 500.0*time(ind));
 
 % add chirp signal
 f0 = 1.0;            % start frequency
@@ -50,9 +52,10 @@ variance = 10.0;
 out_n = out + sqrt(variance) * randn(N_sim, 1);
 
 % sdft stuff
-N = 50;        % numbers of sdft samples
-f_min = 150.0; % minimum tracking frequency, hat to fit onto half bin
-f_max = 500.0; % maximum
+N = 90;        % numbers of sdft samples
+N_peak = 3;    % number of peaks the algorithm tracks
+f_min = 100.0; % minimum tracking frequency, hat to fit onto half bin
+f_max = 600.0; % maximum
 epsilon = 1e-4;
 
 df = 1/(N * Ts);       % SDFT frequency resolution
@@ -66,22 +69,28 @@ f_min = (ind_min - 1) * df;
 f_max = (ind_max - 1) * df;
 
 % create iir filters
-f_init_1 = (f_max - f_min) * 2.0 / 3.0 + f_min;
-f_init_2 = (f_max - f_min) * 1.0 / 3.0 + f_min;
+f_init = f_max; %(f_max - f_min) / 2.0 + f_min;
 % f_cut  = 10.0;
 % lowpass1 = get_iir_filter();
 % lowpass1 = lowpass1_init(lowpass1, f_cut, Ts);
 % lowpass1 = iir_filter_reset(lowpass1, f_init);
-f_cut = 5.0;
+f_cut = 10.0;
 knl1 = 2.0 * pi * f_cut;
-knl2 = 1.0 * (0.2 * pi / Ts - knl1) / (2 * (f_max - f_min));
+knl2 = 0.0 * (0.6 * pi / Ts - knl1) / (2 * (f_max - f_min));
 
-D = sqrt(3)/2;
+D = 1.0; %sqrt(3)/2;
 % create fading_notch_filter
-fading_notch_1 = get_fading_notch_filter();
-fading_notch_1 = fading_notch_init(fading_notch_1, f_init_1, D, f_min, f_min + 50.0, Ts);
-fading_notch_2 = get_fading_notch_filter();
-fading_notch_2 = fading_notch_init(fading_notch_2, f_init_2, D, f_min, f_min + 50.0, Ts);
+for i = 1:N_peak
+    fading_notch = get_fading_notch_filter();
+    fading_notch = fading_notch_init(fading_notch, ...
+                                     f_init, ...
+                                     D, ...
+                                     f_min, ...
+                                     f_min + 50, ...
+                                     Ts);
+    fading_notches{i} = fading_notch;
+end
+clear fading_notch
 
 fprintf('   --- SDFT Eval Script ---\n');
 fprintf('    Sampling Time %24.2f musec\n', 1e6 * Ts);
@@ -89,8 +98,8 @@ fprintf('    Sampling Frequency %17.2f kHz\n', 1e-3 / Ts);
 fprintf('    Theoretical Buffer Length %8d\n', N);
 fprintf('    Actual Buffer Length %13d\n', N/2 + 1);
 fprintf('    Frequency Resolution %16.2f Hz\n', df);
-fprintf('    SDFT Min. Frequency %17.2f Hz\n', df);
-fprintf('    SDFT Max. Frequency %17.2f Hz\n', df);
+fprintf('    SDFT Min. Frequency %17.2f Hz\n', f_min);
+fprintf('    SDFT Max. Frequency %17.2f Hz\n', f_max);
 
 
 %%
@@ -104,12 +113,12 @@ X_w_abs_avg_eval = zeros(N/2 + 1, 1);
 P_avg_eval   = zeros(N/2 + 1, 1);
 P_w_avg_eval = zeros(N/2 + 1, 1);
 
-f_peak_past   = [f_init_1, f_init_2];
-f_peak_eval   = zeros(N_sim-N+1, 2);
-f_peak_f_eval = zeros(N_sim-N+1, 2);
+f_peak_past   = f_init * ones(1, N_peak);
+f_peak_eval   = zeros(N_sim-N+1, N_peak);
+f_peak_f_eval = zeros(N_sim-N+1, N_peak);
 
-ptn_ratio_eval   = zeros(N/2 + 1, 2);
-X_peak_eval      = zeros(N/2 + 1, 2);
+ptn_ratio_eval   = zeros(N/2 + 1, N_peak);
+X_peak_eval      = zeros(N/2 + 1, N_peak);
 X_mean_rest_eval = zeros(N/2 + 1, 1);
 
 cntr = 1;
@@ -137,44 +146,35 @@ for i = 1:N_sim
         X_w_eval = abs(X_w);
         % [f_peak_candidate_1, is_peak_1, ...
         %     ptn_ratio_1, X_peak_1, X_mean_rest] = ...
-        %     fit_max_freq_parabola(X_w_eval, N, ind_min, ind_max, df);
-        [f_peak_candidate_1, f_peak_candidate_2, ...
-            is_peak_1, is_peak_2, ...
-            ptn_ratio_1, ptn_ratio_2, ...
-            X_peak_1, X_peak_2, X_mean_rest] = ...
-            fit_max_freq_parabola_two_peaks(X_w_eval, N, ind_min, ind_max, df);
-
-        ptn_ratio_eval(cntr, :) = [ptn_ratio_1, ptn_ratio_2];
-        X_peak_eval(cntr, :)    = [X_peak_1, X_peak_2];
+        %     find_peak(X_w_eval, N, ind_min, ind_max, df);
+        [f_peak_candidate, is_peak, ptn_ratio, X_peak, X_mean_rest] = ...
+            find_peaks(X_w_eval, N, ind_min, ind_max, df, N_peak);
+        ptn_ratio_eval(cntr, :) = ptn_ratio;
+        X_peak_eval(cntr, :)    = X_peak;
         X_mean_rest_eval(cntr)  = X_mean_rest;
 
-        if (is_peak_1)
-            f_peak_eval(cntr, 1) = f_peak_candidate_1;
-        else
-            f_peak_eval(cntr, 1) = f_peak_past(1);
+        % f_peak_candidate(1:sum(is_peak)) = sort(f_peak_candidate(1:sum(is_peak)));
+        
+        for j = 1:N_peak
+            if (is_peak(j))
+                f_peak_eval(cntr, j) = f_peak_candidate(j);
+            else
+                f_peak_eval(cntr, j) = f_peak_past(j);
+            end
+            f_peak_past(j) = f_peak_eval(cntr, j);
         end
-        f_peak_past(1) = f_peak_eval(cntr, 1);
 
-        if (is_peak_2)
-            f_peak_eval(cntr, 2) = f_peak_candidate_2;
-        else
-            f_peak_eval(cntr, 2) = f_peak_past(2);
-        end
-        f_peak_past(2) = f_peak_eval(cntr, 2);
+        % f_peak_eval(cntr, :) = sort(f_peak_eval(cntr, :), 'descend');
 
         % % lowpass filter
         % [lowpass1_w, val_f] = iir_filter_apply(lowpass1_w, f_w_peak_eval(cntr));
         % f_w_peak_f_eval(cntr) = val_f;
         if (cntr == 1)
-            val_w_f_past_1 = f_peak_eval(cntr, 1);
-            val_w_f_past_2 = f_peak_eval(cntr, 2);
+            val_w_f_past = f_peak_eval(cntr, :);
         end
-        val_f_1 = nl_lowpass(f_peak_eval(cntr, 1), val_w_f_past_1, knl1, knl2, Ts);
-        val_f_2 = nl_lowpass(f_peak_eval(cntr, 2), val_w_f_past_2, knl1, knl2, Ts);
-        val_w_f_past_1 = val_f_1;
-        val_w_f_past_2 = val_f_2;
-        f_peak_f_eval(cntr, 1) = val_f_1;
-        f_peak_f_eval(cntr, 2) = val_f_2;
+        val_f = nl_lowpass(f_peak_eval(cntr, :), val_w_f_past, knl1, knl2, Ts);
+        val_w_f_past = val_f;
+        f_peak_f_eval(cntr, :) = val_f;
 
         % increment counter
         cntr = cntr + 1;
@@ -196,21 +196,23 @@ X_w_f_spg_eval = zeros(N_sim-N+1, N/2 + 1);
 
 out_f = zeros(N_sim, 1);
 
-val_f_2 = out_n(1);
+val_f = out_n(1);
 
 clear sdft_apply
 cntr = 1;
 for i = 1:N_sim
            
     % update sdft
-    [~, X_w_f, is_valid] = sdft_apply(val_f_2, N, epsilon, inf, Ts);
+    [~, X_w_f, is_valid] = sdft_apply(val_f, N, epsilon, inf, Ts);
 
     if (is_valid) % N_data-N+1 times valid, we have to fill the buffer first
 
         % update fading notch
-        [fading_notch_1, val_f_1] = fading_notch_filter_apply(fading_notch_1, f_peak_f_eval(cntr, 1), out_n(i));
-        [fading_notch_2, val_f_2] = fading_notch_filter_apply(fading_notch_2, f_peak_f_eval(cntr, 2), val_f_1);
-        out_f(i) = val_f_2;
+        [fading_notches{1}, val_f] = fading_notch_filter_apply(fading_notches{1}, f_peak_f_eval(cntr, 1), out_n(i));
+        for j = 2:N_peak
+            [fading_notches{j}, val_f] = fading_notch_filter_apply(fading_notches{j}, f_peak_f_eval(cntr, j), val_f);
+        end
+        out_f(i) = val_f;
 
         % spectrogram
         X_w_f_spg_eval(cntr,:) = X_w_f.';
@@ -219,8 +221,10 @@ for i = 1:N_sim
         cntr = cntr + 1;
     else
         % update fading notch
-        [fading_notch_1, val_f_1] = fading_notch_filter_apply(fading_notch_1, f_init_1, out_n(i));
-        [fading_notch_2, val_f_2] = fading_notch_filter_apply(fading_notch_2, f_init_2, val_f_1);
+        [fading_notches{1}, val_f] = fading_notch_filter_apply(fading_notches{1}, f_init, out_n(i));
+        for j = 2:N_peak
+            [fading_notches{j}, val_f] = fading_notch_filter_apply(fading_notches{j}, f_init, val_f);
+        end
     end
 end
 
@@ -285,7 +289,7 @@ set(gca, 'ColorScale', 'log')
 subplot(312)
 qmesh = pcolor(time(N:end), freq, abs(X_w_spg_eval).'); hold on
 plot(time(N:end), f_peak_eval, 'k')
-plot(time(N:end), f_peak_f_eval, 'm'), hold off
+plot(time(N:end), f_peak_f_eval, 'Color', [0 0.5 0]), hold off
 set(qmesh, 'EdgeColor', 'None');
 title('SDFT vs. Time windowed')
 xlabel('Time (sec)'), ylabel('Frequency (Hz)')
@@ -309,7 +313,7 @@ subplot(312)
 plot(time(N:end), X_peak_eval), grid on
 xlabel('Time (sec)'), ylabel('Peak')
 subplot(313)
-plot(time(N:end), ptn_ratio_eval), grid on
+plot(time(N:end), (ptn_ratio_eval)), grid on
 xlabel('Time (sec)'), ylabel('Peak to Noise Ratio')
 
 return
