@@ -2,7 +2,7 @@ function [f_peak, ...
     is_peak, ...
     ptn_ratio, ...
     X_peak, ...
-    X_mean_rest] = find_peaks(X, N, ind_min, ind_max, df, N_peak)
+    X_mean_rest] = find_peaks(X, ind_min, ind_max, df, ptn_ratio_min, N_peak)
 
     % default return values
     f_peak = zeros(1, N_peak);
@@ -48,7 +48,7 @@ function [f_peak, ...
         is_part_of_rest = true;
         for j = 1:N_peak % sum(is_peak)
             % exclude peaks and neighbors
-            if abs(i - ind_peak(j)) < 2
+            if abs(i - ind_peak(j)) <= 2
                 is_part_of_rest = false;
                 break
             end
@@ -76,7 +76,7 @@ function [f_peak, ...
 
     % calculate peak
     for i = 1:N_peak
-        if (is_peak(i)) &&  ptn_ratio(i) > 5.0
+        if ((is_peak(i)) &&  (ptn_ratio(i) > ptn_ratio_min))
             % quadratic interpolation of peak
             f_peak(i) = (ind_peak(i) - 1);
             % height of peak bin (y1) and shoulder bins (y0, y2)

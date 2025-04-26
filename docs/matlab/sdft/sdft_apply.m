@@ -1,4 +1,4 @@
-function [X_out, X_w_out, is_valid_out] = sdft_apply(x_new, N, epsilon, fcut, Ts)
+function [X_out, X_w_out, is_valid_out] = sdft_apply(x_new, N, epsilon, Ts)
 
     % it is assumed that mod(N, 2) = 0
 
@@ -33,21 +33,19 @@ function [X_out, X_w_out, is_valid_out] = sdft_apply(x_new, N, epsilon, fcut, Ts
     % update fft and apply hann window
     k0 = 0.50;
     k1 = 0.25;
-    b0 = 1.0 - exp(-Ts * 2.0 * pi * fcut);
-    a0 = b0 - 1.0;
 
     X(1) = twiddle(1) * (x(ind) - r_to_N * x_previous + r * X(1));
     X(N/2 + 1) = twiddle(N/2 + 1) * (x(ind) - r_to_N * x_previous + r * X(N/2 + 1));
     for i = 2:N/2
         X(i) = twiddle(i) * (x(ind) - r_to_N * x_previous + r * X(i));
         if (i == 2)
-            X_w(1) = b0 * scale_ratio * (k0*X(1) - k1 * (conj(X(2)) + X(2)) ) - a0 * X_w(1);
+            X_w(1) = scale_ratio * (k0*X(1) - k1 * (conj(X(2)) + X(2)) );
         else
-            X_w(i-1) = b0 * scale_ratio * (k0 * X(i-1) - k1 * (X(i-2) + X(i)) ) - a0 * X_w(i-1);
+            X_w(i-1) = scale_ratio * (k0 * X(i-1) - k1 * (X(i-2) + X(i)) );
         end
     end
-    X_w(N/2) = b0 * scale_ratio * (k0 * X(N/2) - k1 * (X(N/2-1) + X(N/2+1)) ) - a0 * X_w(N/2);
-    X_w(N/2 + 1) = b0 * scale_ratio * (k0 * X(N/2 + 1) - k1 * (X(N/2) + conj(X(N/2) )) ) - a0 * X_w(N/2 + 1);
+    X_w(N/2) = scale_ratio * (k0 * X(N/2) - k1 * (X(N/2-1) + X(N/2+1)) );
+    X_w(N/2 + 1) = scale_ratio * (k0 * X(N/2 + 1) - k1 * (X(N/2) + conj(X(N/2) )) );
 
     % increment index
     ind = ind + 1;

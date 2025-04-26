@@ -6,9 +6,11 @@ addpath ..\iirfilter\c_implementation\
 % Notes:
 % - Currently the current controller runs at 25 kHz
 % - I assume the outher loops, so the vel and pos controller run at 5 kHz
-% - mod(N, 2) has to be zero
 % - Direct fft and sdft are equal only if epsilon is zero
 % - Peak detection works best for abs(X) and not X*conj(X) = abs(X)^2
+
+% TODO:
+% - Develop better filter strategy to trak frequency peaks
 
 Ts_fast = 1/5e3;
 N_ds = 4;            % downsampling factor
@@ -52,11 +54,33 @@ variance = 10.0;
 out_n = out + sqrt(variance) * randn(N_sim, 1);
 
 % sdft stuff
-N = 90;        % numbers of sdft samples
+N = 100;       % numbers of sdft samples
 N_peak = 3;    % number of peaks the algorithm tracks
+ptn_ratio_min = 5;
 f_min = 100.0; % minimum tracking frequency, hat to fit onto half bin
 f_max = 600.0; % maximum
 epsilon = 1e-4;
+
+
+clc, clear all
+load data_04.mat
+Ts_fast = 1/20e3;
+N_ds = 3;            % downsampling factor
+Ts = N_ds * Ts_fast; % sampling time
+out = resample(data.signals.values(:,6), 1, N_ds); % Downsample by N_ds, includes filtering
+out_n = out;
+N_sim = length(out); % total number of data points
+time = (0:N_sim-1).' * Ts;
+T_sim = time(end);   % simulation time
+
+% sdft stuff
+N = 100;       % numbers of sdft samples
+N_peak = 3;    % number of peaks the algorithm tracks
+ptn_ratio_min = 5;
+f_min = 2e3; % minimum tracking frequency, hat to fit onto half bin
+f_max = 3e3; % maximum
+epsilon = 1e-4;
+
 
 df = 1/(N * Ts);       % SDFT frequency resolution
 freq = (0:N-1).' * df; % frequency
@@ -74,11 +98,16 @@ f_init = f_max; %(f_max - f_min) / 2.0 + f_min;
 % lowpass1 = get_iir_filter();
 % lowpass1 = lowpass1_init(lowpass1, f_cut, Ts);
 % lowpass1 = iir_filter_reset(lowpass1, f_init);
-f_cut = 10.0;
+f_cut = 20.0;
 knl1 = 2.0 * pi * f_cut;
-knl2 = 0.0 * (0.6 * pi / Ts - knl1) / (2 * (f_max - f_min));
+knl2 = 0.0 * (0.9 * pi / Ts - knl1) / (2 * (f_max - f_min));
 
-D = 1.0; %sqrt(3)/2;
+% filter spectral density over time
+f_cut = 50.0;
+b0 = 1.0 - exp(-Ts * 2.0 * pi * f_cut);
+a0 = b0 - 1.0;
+
+D = 0.3; %sqrt(3)/2;
 % create fading_notch_filter
 for i = 1:N_peak
     fading_notch = get_fading_notch_filter();
@@ -121,11 +150,12 @@ ptn_ratio_eval   = zeros(N/2 + 1, N_peak);
 X_peak_eval      = zeros(N/2 + 1, N_peak);
 X_mean_rest_eval = zeros(N/2 + 1, 1);
 
+clear sdft_apply
 cntr = 1;
 for i = 1:N_sim
 
     % update sdft
-    [X, X_w, is_valid] = sdft_apply(out_n(i), N, epsilon, inf, Ts);
+    [X, X_w, is_valid] = sdft_apply(out_n(i), N, epsilon, Ts);
 
     if (is_valid) % N_data-N+1 times valid, we have to fill the buffer first
 
@@ -142,18 +172,18 @@ for i = 1:N_sim
         P_w_avg_eval = P_w_avg_eval + real(X_w .* conj(X_w) * 2);
 
         % evaluate max frequency for windowed version
-        % X_w_eval = real(X_w .* conj(X_w) * 2);
-        X_w_eval = abs(X_w);
-        % [f_peak_candidate_1, is_peak_1, ...
-        %     ptn_ratio_1, X_peak_1, X_mean_rest] = ...
-        %     find_peak(X_w_eval, N, ind_min, ind_max, df);
+        % X_w_eval = abs(X_w);
+        if (cntr == 1)
+            X_w_eval_past = real(X_w .* conj(X_w) * 2);
+        end
+        X_w_eval = b0 * real(X_w .* conj(X_w) * 2) - a0 * X_w_eval_past;
+        % [f_peak_candidate, is_peak, ptn_ratio, X_peak, X_mean_rest] = ...
+            % find_peak(X_w_eval, ind_min, ind_max, df, ptn_ratio_min);
         [f_peak_candidate, is_peak, ptn_ratio, X_peak, X_mean_rest] = ...
-            find_peaks(X_w_eval, N, ind_min, ind_max, df, N_peak);
+            find_peaks(X_w_eval, ind_min, ind_max, df, ptn_ratio_min, N_peak);
         ptn_ratio_eval(cntr, :) = ptn_ratio;
         X_peak_eval(cntr, :)    = X_peak;
         X_mean_rest_eval(cntr)  = X_mean_rest;
-
-        % f_peak_candidate(1:sum(is_peak)) = sort(f_peak_candidate(1:sum(is_peak)));
         
         for j = 1:N_peak
             if (is_peak(j))
@@ -163,8 +193,6 @@ for i = 1:N_sim
             end
             f_peak_past(j) = f_peak_eval(cntr, j);
         end
-
-        % f_peak_eval(cntr, :) = sort(f_peak_eval(cntr, :), 'descend');
 
         % % lowpass filter
         % [lowpass1_w, val_f] = iir_filter_apply(lowpass1_w, f_w_peak_eval(cntr));
@@ -203,7 +231,7 @@ cntr = 1;
 for i = 1:N_sim
            
     % update sdft
-    [~, X_w_f, is_valid] = sdft_apply(val_f, N, epsilon, inf, Ts);
+    [~, X_w_f, is_valid] = sdft_apply(val_f, N, epsilon, Ts);
 
     if (is_valid) % N_data-N+1 times valid, we have to fill the buffer first
 
@@ -298,7 +326,7 @@ set(gca, 'ColorScale', 'log')
 subplot(313)
 qmesh = pcolor(time(N:end), freq, abs(X_w_f_spg_eval).'); hold on
 plot(time(N:end), f_peak_eval, 'k')
-plot(time(N:end), f_peak_f_eval, 'm'), hold off
+plot(time(N:end), f_peak_f_eval, 'Color', [0 0.5 0]), hold off
 set(qmesh, 'EdgeColor', 'None');
 title('SDFT vs. Time windowed after Notch')
 xlabel('Time (sec)'), ylabel('Frequency (Hz)')

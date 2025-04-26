@@ -2,7 +2,7 @@ function [f_peak, ...
     is_peak, ...
     ptn_ratio, ...
     X_peak, ...
-    X_mean_rest] = find_peak(X, N, ind_min, ind_max, df)
+    X_mean_rest] = find_peak(X, ind_min, ind_max, df, ptn_ratio_min)
 
     % default return values
     f_peak = 0.0;
@@ -47,7 +47,7 @@ function [f_peak, ...
     end
 
     % calculate peak
-    if (is_peak) &&  ptn_ratio > 2.0
+    if (is_peak) &&  ptn_ratio > ptn_ratio_min
         % quadratic interpolation of peak
         f_peak = (ind_peak - 1);
         % height of peak bin (y1) and shoulder bins (y0, y2)
