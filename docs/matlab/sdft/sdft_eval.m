@@ -1,6 +1,7 @@
 clc, clear all
 addpath ..\iirfilter\
 addpath ..\iirfilter\c_implementation\
+addpath ..\lib
 %%
 
 % Notes:
@@ -50,13 +51,13 @@ time_chirp = time(ind_chirp);
 out(ind_chirp) = out(ind_chirp) + A * flipud(chirp(time_chirp, f1, time_chirp(end) - t1, f0, 'linear', -90));
 
 % add noise, sqrt(var) * randn
-variance = 10.0;
+variance = 1.0;
 out_n = out + sqrt(variance) * randn(N_sim, 1);
 
 % sdft stuff
 N = 100;       % numbers of sdft samples
 N_peak = 3;    % number of peaks the algorithm tracks
-ptn_ratio_min = 5;
+ptn_ratio_min = 30;
 f_min = 100.0; % minimum tracking frequency, hat to fit onto half bin
 f_max = 600.0; % maximum
 epsilon = 1e-4;
@@ -68,17 +69,69 @@ Ts_fast = 1/20e3;
 N_ds = 3;            % downsampling factor
 Ts = N_ds * Ts_fast; % sampling time
 out = resample(data.signals.values(:,6), 1, N_ds); % Downsample by N_ds, includes filtering
-out_n = out;
 N_sim = length(out); % total number of data points
+% add noise, sqrt(var) * randn
+variance = 0.0;
+out_n = out + sqrt(variance) * randn(N_sim, 1);
+time = (0:N_sim-1).' * Ts;
+T_sim = time(end);   % simulation time
+% out = diff(out);
+% out = [out(1); out];
+% out_n = diff(out_n);
+% out_n = [out_n(1); out_n];
+
+% sdft stuff
+N = 300;       % numbers of sdft samples
+N_peak = 3;    % number of peaks the algorithm tracks
+ptn_ratio_min = 30;
+f_min = 1.0e3; % minimum tracking frequency, hat to fit onto half bin
+f_max = 3.0e3; % maximum
+epsilon = 1e-4;
+
+
+clc, clear all
+% load noSM_DC_Relay_02_50.mat
+load SM50_30_DC_Relay_02_50_ds.mat
+% load CB_DC_Relay_15_40_ds.mat
+Ts_fast = 1/25e3;
+N_ds = 5;            % downsampling factor
+Ts = N_ds * Ts_fast; % sampling time
+out = resample(omega, 1, N_ds);
+N_sim = length(out); % total number of data points
+% add noise, sqrt(var) * randn
+variance = 0.0;
+out_n = out + sqrt(variance) * randn(N_sim, 1);
 time = (0:N_sim-1).' * Ts;
 T_sim = time(end);   % simulation time
 
 % sdft stuff
 N = 100;       % numbers of sdft samples
 N_peak = 3;    % number of peaks the algorithm tracks
-ptn_ratio_min = 5;
-f_min = 2e3; % minimum tracking frequency, hat to fit onto half bin
-f_max = 3e3; % maximum
+ptn_ratio_min = 30;
+f_min = 0.3e3; % minimum tracking frequency, hat to fit onto half bin
+f_max = 1.1e3; % maximum
+epsilon = 1e-4;
+
+
+clc, clear all
+load chirp_50Hz_to_1kHz_500_msec_1_A.mat
+Ts_fast = 1/25e3;
+N_ds = 5;            % downsampling factor
+Ts = N_ds * Ts_fast; % sampling time
+out = resample(omega, 1, N_ds);
+N_sim = length(out); % total number of data points
+% add noise, sqrt(var) * randn
+variance = 0.0;
+out_n = out + sqrt(variance) * randn(N_sim, 1);
+time = (0:N_sim-1).' * Ts;
+T_sim = time(end);   % simulation time
+
+% sdft stuff
+N = 100;       % numbers of sdft samples
+N_peak = 1;    % number of peaks the algorithm tracks
+ptn_ratio_min = 30;
+f_min = 0.1e3; % minimum tracking frequency, hat to fit onto half bin
+f_max = 1.0e3; % maximum
 epsilon = 1e-4;
 
 
@@ -98,16 +151,16 @@ f_init = f_max; %(f_max - f_min) / 2.0 + f_min;
 % lowpass1 = get_iir_filter();
 % lowpass1 = lowpass1_init(lowpass1, f_cut, Ts);
 % lowpass1 = iir_filter_reset(lowpass1, f_init);
-f_cut = 20.0;
+f_cut = 200.0;
 knl1 = 2.0 * pi * f_cut;
 knl2 = 0.0 * (0.9 * pi / Ts - knl1) / (2 * (f_max - f_min));
 
 % filter spectral density over time
-f_cut = 50.0;
+f_cut = inf * 1.0;
 b0 = 1.0 - exp(-Ts * 2.0 * pi * f_cut);
 a0 = b0 - 1.0;
 
-D = 0.3; %sqrt(3)/2;
+D = sqrt(3)/2;
 % create fading_notch_filter
 for i = 1:N_peak
     fading_notch = get_fading_notch_filter();
@@ -142,7 +195,6 @@ X_w_abs_avg_eval = zeros(N/2 + 1, 1);
 P_avg_eval   = zeros(N/2 + 1, 1);
 P_w_avg_eval = zeros(N/2 + 1, 1);
 
-f_peak_past   = f_init * ones(1, N_peak);
 f_peak_eval   = zeros(N_sim-N+1, N_peak);
 f_peak_f_eval = zeros(N_sim-N+1, N_peak);
 
@@ -159,39 +211,57 @@ for i = 1:N_sim
 
     if (is_valid) % N_data-N+1 times valid, we have to fill the buffer first
 
-        % spectrogram
-        X_spg_eval(cntr,:)   = X.';
-        X_w_spg_eval(cntr,:) = X_w.';
+        % spectras averaged filter
+        if (cntr == 1)
+            X_squared   = real(2 * X   .* conj(X  ));
+            X_w_squared = real(2 * X_w .* conj(X_w));
+        end
+        X_squared   = b0 * real(2 * X   .* conj(X  )) - a0 * X_squared  ;
+        X_w_squared = b0 * real(2 * X_w .* conj(X_w)) - a0 * X_w_squared;
 
-        % spectras averaged
-        X_abs_avg_eval   = X_abs_avg_eval   + abs(X);
+                % spectrogram
+        X_spg_eval(cntr,:)   = sqrt(X_squared  ).';
+        X_w_spg_eval(cntr,:) = sqrt(X_w_squared).';
+
+        % spectras averaged average
+        X_abs_avg_eval   = X_abs_avg_eval   + abs(X)  ;
         X_w_abs_avg_eval = X_w_abs_avg_eval + abs(X_w);
     
         % psd averaged
-        P_avg_eval   = P_avg_eval   + real(X .* conj(X) * 2);
-        P_w_avg_eval = P_w_avg_eval + real(X_w .* conj(X_w) * 2);
+        P_avg_eval   = P_avg_eval   + real(2 * X .* conj(X));
+        P_w_avg_eval = P_w_avg_eval + real(2 * X_w .* conj(X_w));
 
-        % evaluate max frequency for windowed version
-        % X_w_eval = abs(X_w);
-        if (cntr == 1)
-            X_w_eval_past = real(X_w .* conj(X_w) * 2);
-        end
-        X_w_eval = b0 * real(X_w .* conj(X_w) * 2) - a0 * X_w_eval_past;
         % [f_peak_candidate, is_peak, ptn_ratio, X_peak, X_mean_rest] = ...
             % find_peak(X_w_eval, ind_min, ind_max, df, ptn_ratio_min);
         [f_peak_candidate, is_peak, ptn_ratio, X_peak, X_mean_rest] = ...
-            find_peaks(X_w_eval, ind_min, ind_max, df, ptn_ratio_min, N_peak);
+            find_peaks(X_w_squared, ind_min, ind_max, df, ptn_ratio_min, N_peak);
         ptn_ratio_eval(cntr, :) = ptn_ratio;
         X_peak_eval(cntr, :)    = X_peak;
         X_mean_rest_eval(cntr)  = X_mean_rest;
+
+        % [f_peak_candidate, ind_sorted] = sort(f_peak_candidate, 'ascend');
+        % is_peak = is_peak(ind_sorted);
+        % ptn_ratio = ptn_ratio(ind_sorted);
+        % X_peak = X_peak(ind_sorted);
+
+        % [f_peak_candidate(1:sum(is_peak)), ind_sorted] = sort(f_peak_candidate(1:sum(is_peak)), 'ascend');
+        % temp = ptn_ratio(1:sum(is_peak));
+        % ptn_ratio(1:sum(is_peak)) = temp(ind_sorted);
+        % temp = X_peak(1:sum(is_peak));
+        % X_peak(1:sum(is_peak)) = temp(ind_sorted);
+        % temp = is_peak(1:sum(is_peak));
+        % is_peak(1:sum(is_peak)) = temp(ind_sorted);
         
         for j = 1:N_peak
             if (is_peak(j))
                 f_peak_eval(cntr, j) = f_peak_candidate(j);
             else
-                f_peak_eval(cntr, j) = f_peak_past(j);
+                if (cntr == 1)
+                    f_peak_eval(cntr, j) = f_init;
+                else
+                    f_peak_eval(cntr, j) = f_peak_eval(cntr-1, j);
+                end
             end
-            f_peak_past(j) = f_peak_eval(cntr, j);
         end
 
         % % lowpass filter
@@ -344,35 +414,42 @@ subplot(313)
 plot(time(N:end), (ptn_ratio_eval)), grid on
 xlabel('Time (sec)'), ylabel('Peak to Noise Ratio')
 
-return
+% n = 3;
+% Noverlap = n*N - 1;
+% 
+% figure(5)
+% pwelch([out, out_n], ones(n*N,1), Noverlap, n*N, 1/Ts, 'power');
+% 
+% 
+% return
+
 %%
 
 Noverlap = N - 1;
 
-% welch
-P   = estimate_spectras(out_n, ones(N,1)          , Noverlap, N, Ts);
-P_w = estimate_spectras(out_n, hann(N, 'periodic'), Noverlap, N, Ts);
-P   = P / 2;
-P_w = P_w / 2;
+% % welch
+% P   = estimate_spectras(out_n, ones(N,1)          , Noverlap, N, Ts);
+% P_w = estimate_spectras(out_n, hann(N, 'periodic'), Noverlap, N, Ts);
+% P   = P / 2;
+% P_w = P_w / 2;
 
 % welch matlab
 P_welch   = pwelch(out_n, ones(N,1)          , Noverlap, N, 1/Ts, 'power');
 P_w_welch = pwelch(out_n, hann(N, 'periodic'), Noverlap, N, 1/Ts, 'power');
 
 figure(6)
-subplot(211)
+% subplot(211)
 plot(freq, [P_avg_eval, P_w_avg_eval]), grid on, hold on
-plot(freq, [P, P_w])
+% plot(freq, [P, P_w])
 plot(freq, [P_welch, P_w_welch]), hold off
 set(gca, 'YScale', 'log')
 xlabel('Frequency (Hz)')
-legend('P avg eval', 'Pw avgeval', ...
-    'P', 'Pw', ...
+legend('P avg eval', 'Pw avgeval', ... % 'P', 'Pw', ...
     'P welch', 'Pw welch', ...
     'location', 'best')
-subplot(212)
-plot(freq, [X_abs_avg_eval, X_w_abs_avg_eval]), grid on
-set(gca, 'YScale', 'log')
-xlabel('Frequency (Hz)')
-legend('X_abs_avg_eval', 'X_w_abs_avg_eval', ...
-    'location', 'best')
+% subplot(212)
+% plot(freq, [X_abs_avg_eval, X_w_abs_avg_eval]), grid on
+% set(gca, 'YScale', 'log')
+% xlabel('Frequency (Hz)')
+% legend('X_abs_avg_eval', 'X_w_abs_avg_eval', ...
+%     'location', 'best')

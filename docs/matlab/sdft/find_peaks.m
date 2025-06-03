@@ -88,7 +88,7 @@ function [f_peak, ...
             if (denom ~= 0.0)
                 f_peak(i) = f_peak(i) + (y0 - y2) / denom;
             end
-            f_peak(i) = max([ind_min - 1,  f_peak(i)]) * df;
+            f_peak(i) = max([ind_min - 1,  f_peak(i)]) * df +  0 * 0.5 * df;
             % % clamp
             % if f_peak(i) < ind_min - 1
             %     f_peak(i) = ind_min - 1;

@@ -38,6 +38,8 @@ function [f_peak, ...
         X_mean_rest = 0.0;
     end
 
+    % X_mean_rest = mean(X(ind_min-1:ind_max));
+
     % X_sorted = insertionSortWithIndices(X(ind_min-1:ind_max));
     % X_mean_rest = mean(X_sorted(1:end - 4));
    
@@ -59,7 +61,7 @@ function [f_peak, ...
         if (denom ~= 0.0)
             f_peak = f_peak + (y0 - y2) / denom;
         end
-        f_peak = max([ind_min - 1,  f_peak]) * df;
+        f_peak = max([ind_min - 1,  f_peak]) * df +  0 * 0.5 * df;
     else
         is_peak = 0;
     end
