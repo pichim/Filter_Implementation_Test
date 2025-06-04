@@ -231,8 +231,8 @@ for i = 1:N_sim
         P_avg_eval   = P_avg_eval   + real(2 * X .* conj(X));
         P_w_avg_eval = P_w_avg_eval + real(2 * X_w .* conj(X_w));
 
-        % [f_peak_candidate, is_peak, ptn_ratio, X_peak, X_mean_rest] = ...
-            % find_peak(X_w_eval, ind_min, ind_max, df, ptn_ratio_min);
+        % % [f_peak_candidate, is_peak, ptn_ratio, X_peak, X_mean_rest] = ...
+        %     % find_peak(X_w_eval, ind_min, ind_max, df, ptn_ratio_min);
         [f_peak_candidate, is_peak, ptn_ratio, X_peak, X_mean_rest] = ...
             find_peaks(X_w_squared, ind_min, ind_max, df, ptn_ratio_min, N_peak);
         ptn_ratio_eval(cntr, :) = ptn_ratio;
@@ -280,12 +280,12 @@ for i = 1:N_sim
 end
 
 % normalise spectras averaged
-X_abs_avg_eval   = X_abs_avg_eval / cntr;
-X_w_abs_avg_eval = X_w_abs_avg_eval / cntr;
+X_abs_avg_eval   = X_abs_avg_eval / (cntr - 1);
+X_w_abs_avg_eval = X_w_abs_avg_eval / (cntr - 1);
 
 % normalise psd averaged
-P_avg_eval   = P_avg_eval / cntr;
-P_w_avg_eval = P_w_avg_eval / cntr;
+P_avg_eval   = P_avg_eval / (cntr - 1);
+P_w_avg_eval = P_w_avg_eval / (cntr - 1);
 
 
 %%
@@ -415,27 +415,27 @@ plot(time(N:end), (ptn_ratio_eval)), grid on
 xlabel('Time (sec)'), ylabel('Peak to Noise Ratio')
 
 % n = 3;
-% Noverlap = n*N - 1;
+% N_overlap = n*N - 1;
 % 
 % figure(5)
-% pwelch([out, out_n], ones(n*N,1), Noverlap, n*N, 1/Ts, 'power');
+% pwelch([out, out_n], ones(n*N,1), N_overlap, n*N, 1/Ts, 'power');
 % 
 % 
 % return
 
 %%
 
-Noverlap = N - 1;
+N_overlap = N - 1;
 
 % % welch
-% P   = estimate_spectras(out_n, ones(N,1)          , Noverlap, N, Ts);
-% P_w = estimate_spectras(out_n, hann(N, 'periodic'), Noverlap, N, Ts);
+% P   = estimate_spectras(out_n, ones(N,1)          , N_overlap, N, Ts);
+% P_w = estimate_spectras(out_n, hann(N, 'periodic'), N_overlap, N, Ts);
 % P   = P / 2;
 % P_w = P_w / 2;
 
 % welch matlab
-P_welch   = pwelch(out_n, ones(N,1)          , Noverlap, N, 1/Ts, 'power');
-P_w_welch = pwelch(out_n, hann(N, 'periodic'), Noverlap, N, 1/Ts, 'power');
+P_welch   = pwelch(out_n, ones(N,1)          , N_overlap, N, 1/Ts, 'power');
+P_w_welch = pwelch(out_n, hann(N, 'periodic'), N_overlap, N, 1/Ts, 'power');
 
 figure(6)
 % subplot(211)
