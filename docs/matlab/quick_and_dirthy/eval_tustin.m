@@ -1,5 +1,5 @@
 clc, clear variables
-addpath iirfilter\
+addpath(fullfile('iirfilter'));
 %%
 
 % see: https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html

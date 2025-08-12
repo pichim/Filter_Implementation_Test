@@ -1,7 +1,7 @@
 clc, clear all
-addpath ..\iirfilter\
-addpath ..\iirfilter\c_implementation\
-addpath ..\lib
+addpath(fullfile('..', 'iirfilter'));
+addpath(fullfile('..', 'iirfilter', 'c_implementation'));
+addpath(fullfile('..', 'lib'));
 %%
 
 % Notes:

@@ -1,6 +1,6 @@
 clc, clear variables
-addpath iirfilter\
-addpath iirfilter\c_implementation\
+addpath(fullfile('iirfilter'));
+addpath(fullfile('iirfilter', 'c_implementation'));
 %%
 
 Ts = 1e-4;
