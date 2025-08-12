@@ -3,7 +3,7 @@ addpath(fullfile('iirfilter'));
 addpath(fullfile('lib'));
 %%
 
-data_raw = readmatrix("../../output/data.txt");
+data_raw = readmatrix(fullfile('..', '..', 'output', 'data.txt'));
 
 data.time = data_raw(:,1);
 data.values = data_raw(:,2:end);           
@@ -43,10 +43,6 @@ Nest     = round(2.0 / Ts);
 koverlap = 0.9;
 Noverlap = round(koverlap * Nest);
 window   = hann(Nest);
-
-inp = data.values(:,ind_exc(1));
-out = data.values(:,ind_notch(1));
-[Gest, Cest] = estimate_frequency_response(inp, out, window, Noverlap, Nest, Ts);
 
 opt = bodeoptions('cstprefs');
 opt.MagUnits = 'abs';

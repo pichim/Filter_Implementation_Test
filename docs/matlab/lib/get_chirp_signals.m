@@ -59,11 +59,12 @@ function [exc, fchirp, sinarg] = get_chirp_signals(f0, f1, t1, Ts)
         sinarg = mod(sinarg, 2.0 * pi);
 
         % use cosine so that the angle will oscillate around 0 (integral of gyro)
-        exc = cos(sinarg);
+        % exc = cos(sinarg);
+        exc = sin(sinarg);
         
-        % frequencies below 1 Hz will lead to the same angle magnitude as at 1 Hz (integral of gyro)
-        ind = fchirp < 1.0;
-        exc(ind) = fchirp(ind) .* exc(ind);
+        % % frequencies below 1 Hz will lead to the same angle magnitude as at 1 Hz (integral of gyro)
+        % ind = fchirp < 1.0;
+        % exc(ind) = fchirp(ind) .* exc(ind);
         
     end
 
@@ -126,12 +127,13 @@ function chirp = chirpUpdate(chirp)
         chirp.sinarg = mod(chirp.sinarg, 2.0 * pi);
 
         % use cosine so that the angle will oscillate around 0 (integral of gyro)
-        chirp.exc = cos(chirp.sinarg);
+        % chirp.exc = cos(chirp.sinarg);
+        chirp.exc = sin(chirp.sinarg);
         
-        % frequencies below 1 Hz will lead to the same angle magnitude as at 1 Hz (integral of gyro)
-        if (chirp.fchirp < 1.0)
-            chirp.exc = chirp.fchirp * chirp.exc;
-        end
+        % % frequencies below 1 Hz will lead to the same angle magnitude as at 1 Hz (integral of gyro)
+        % if (chirp.fchirp < 1.0)
+        %     chirp.exc = chirp.fchirp * chirp.exc;
+        % end
         chirp.count = chirp.count + 1;
 
         return
